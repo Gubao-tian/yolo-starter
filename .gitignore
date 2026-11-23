@@ -1,0 +1,22 @@
+.venv/
+__pycache__/
+*.pyc
+outputs/*
+!outputs/.gitkeep
+reports/*
+!reports/.gitkeep
+runs/
+*.pt
+*.onnx
+coco128/
+yolov8*.pt
+
+# 工作流临时目录
+.superpowers/
+
+# 增强生成的训练数据可由 annotations.json 重新生成
+datasets/*/generated/
+
+# 保留项目自训练的微调权重（无法重新下载，且体积 <10MB）
+!weights/yolov8n-nuts.pt
+!weights/yolov8n-books-selftrain-experiment.pt

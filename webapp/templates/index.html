@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>拍照识垃圾 · YOLOv8 上传识别</title>
+<style>
+  :root { --bg:#f6f8fb; --card:#fff; --ink:#1e293b; --muted:#64748b;
+          --line:#e2e8f0; --brand:#2563eb; --ok:#16a34a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font-family:"Microsoft YaHei","Segoe UI",sans-serif; line-height:1.6; }
+  .wrap { max-width:960px; margin:0 auto; padding:32px 20px 60px; }
+  header h1 { margin:0 0 4px; font-size:26px; }
+  header p { margin:0 0 24px; color:var(--muted); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px;
+          padding:24px; box-shadow:0 2px 10px rgba(15,23,42,.04); margin-bottom:20px; }
+  .drop { border:2px dashed #cbd5e1; border-radius:12px; padding:36px 20px;
+          text-align:center; cursor:pointer; transition:.2s; background:#fafcff; }
+  .drop:hover, .drop.drag { border-color:var(--brand); background:#eff6ff; }
+  .drop .big { font-size:42px; }
+  .drop .hint { color:var(--muted); font-size:14px; }
+  input[type=file] { display:none; }
+  .row { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-top:16px; }
+  button { background:var(--brand); color:#fff; border:0; border-radius:9px;
+           padding:11px 26px; font-size:15px; cursor:pointer; }
+  button:disabled { background:#93c5fd; cursor:not-allowed; }
+  label.conf { color:var(--muted); font-size:14px; }
+  input[type=range] { vertical-align:middle; }
+  .preview { max-height:220px; max-width:100%; border-radius:8px; margin-top:14px; display:none; }
+  .result-img { max-width:100%; border-radius:10px; border:1px solid var(--line); }
+  .headline { background:#eff6ff; border-left:4px solid var(--brand);
+              padding:12px 16px; border-radius:6px; margin:0 0 16px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; }
+  .tag { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; color:#fff; }
+  .b-blue{background:#2563eb}.b-green{background:#16a34a}
+  .b-red{background:#dc2626}.b-gray{background:#64748b}
+  .muted { color:var(--muted); font-size:13px; }
+  .note { background:#fffbeb; border:1px solid #fde68a; border-radius:8px;
+          padding:10px 14px; font-size:13px; color:#92400e; margin-bottom:20px; }
+  .spinner { display:none; color:var(--brand); margin-top:12px; }
+  .samples { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+  .sample { width:110px; cursor:pointer; border:1px solid var(--line); border-radius:8px;
+            overflow:hidden; background:#fff; transition:.15s; }
+  .sample:hover { border-color:var(--brand); transform:translateY(-2px); }
+  .sample img { width:100%; height:74px; object-fit:cover; display:block; }
+  .sample span { display:block; font-size:11px; padding:5px 4px; color:var(--ink);
+                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
+  .modes { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .mode-btn { background:#fff; color:var(--ink); border:1px solid var(--line);
+              padding:8px 16px; border-radius:8px; font-size:14px; cursor:pointer; }
+  .mode-btn.active { background:var(--brand); color:#fff; border-color:var(--brand); }
+  .mode-tip { color:var(--muted); font-size:12px; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>拍照识垃圾 · YOLOv8 上传识别</h1>
+    <p>上传一张日常照片，自动框出识别到的物品，并给出垃圾分类投放建议。</p>
+  </header>
+
+  <div class="note">
+    演示说明：使用 COCO 预训练的 YOLOv8 模型，能识别瓶子、水果、手机、书本等 80 类常见物品；
+    投放建议由规则表给出，仅作教学演示，实际投放请以当地分类标准为准。
+  </div>
+
+  <div class="card">
+    <label class="drop" id="drop">
+      <div class="big">📷</div>
+      <div>点击选择照片，或把照片拖到这里</div>
+      <div class="hint">支持 JPG / PNG / WEBP</div>
+      <input type="file" id="file" accept="image/*"/>
+    </label>
+    <div class="modes">
+      <button type="button" class="mode-btn active" id="modeWaste" data-mode="waste">垃圾分类（80 类）</button>
+      <button type="button" class="mode-btn" id="modeWorld" data-mode="world">全物体提取</button>
+      <button type="button" class="mode-btn" id="modeDense" data-mode="dense">密集书本</button>
+      <button type="button" class="mode-btn" id="modeNuts" data-mode="nuts">坚果识别</button>
+    </div>
+    <div class="mode-tip" id="modeTip">垃圾分类：框出物品并给出投放建议，速度快。</div>
+    <img class="preview" id="preview" alt="预览"/>
+    <div class="row">
+      <button id="btn" disabled>开始识别</button>
+      <label class="conf">置信度阈值
+        <input type="range" id="conf" min="10" max="80" value="25"/>
+        <span id="confVal">0.25</span>
+      </label>
+    </div>
+    <div class="spinner" id="spinner">识别中，请稍候（首次加载模型约需几秒）…</div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;font-size:18px">没有照片？试试这些示例图</h2>
+    <p class="muted">点一张即可自动识别（图片来自 COCO 公开数据集）。</p>
+    <div class="samples" id="samples"></div>
+  </div>
+
+  <div class="card" id="result" style="display:none">
+    <h2 style="margin-top:0">识别结果</h2>
+    <p class="headline" id="headline"></p>
+    <img class="result-img" id="resultImg" alt="检测结果"/>
+    <div id="wasteBlock">
+      <h3>投放建议</h3>
+      <table id="advTable">
+        <thead><tr><th>识别物品</th><th>数量</th><th>类别</th><th>建议</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="muted" id="nonWaste"></p>
+    </div>
+    <div id="objectBlock" style="display:none">
+      <h3>物品清单</h3>
+      <table id="objTable">
+        <thead><tr><th>物品</th><th>分组</th><th>数量</th><th>最高置信度</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="muted" id="objNote"></p>
+    </div>
+    <div id="nutBlock" style="display:none">
+      <h3>坚果检测清单</h3>
+      <table id="nutTable">
+        <thead><tr><th>物品</th><th>置信度</th><th>位置 (x1,y1,x2,y2)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="muted">基于人工标注微调的模型；已自动过滤误检的大框。仅在训练数据相似的场景下可靠。</p>
+    </div>
+  </div>
+
+<script>
+const file = document.getElementById('file');
+const drop = document.getElementById('drop');
+const preview = document.getElementById('preview');
+const btn = document.getElementById('btn');
+const conf = document.getElementById('conf');
+const confVal = document.getElementById('confVal');
+const spinner = document.getElementById('spinner');
+let chosen = null;
+let mode = 'waste';
+
+document.querySelectorAll('.mode-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    mode = b.dataset.mode;
+    if (mode === 'world') { conf.value = 25; confVal.textContent = '0.25'; }
+    if (mode === 'dense') { conf.value = 15; confVal.textContent = '0.15'; }
+    if (mode === 'nuts') { conf.value = 25; confVal.textContent = '0.25'; }
+    document.getElementById('modeTip').textContent = mode === 'world'
+      ? '全物体提取：按 100+ 类词表找物品（慢，结果为近似匹配）。已自动把阈值设为 0.25；调到 0.15 以下易把花纹、书封面误认成人或玩偶，出现乱框。'
+      : mode === 'dense'
+        ? '密集书本：切片推理 + 高分辨率，专攻书架上密集排列的小目标；已自动把阈值设为 0.15，可自行调高以提升精度。'
+        : mode === 'nuts'
+          ? '坚果识别：用人工标注微调的模型找坚果，自动过滤误检的大框。适合饭盒、坚果盘中带壳坚果的识别。'
+          : '垃圾分类：框出物品并给出投放建议，速度快。';
+  });
+});
+
+function showPicked(f){
+  if(!f || !f.type.startsWith('image/')) return;
+  chosen = f;
+  const reader = new FileReader();
+  reader.onload = e => { preview.src = e.target.result; preview.style.display='block'; };
+  reader.readAsDataURL(f);
+  btn.disabled = false;
+  document.getElementById('result').style.display='none';
+}
+drop.addEventListener('click', () => file.click());
+file.addEventListener('change', e => showPicked(e.target.files[0]));
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('drag');
+  showPicked(e.dataTransfer.files[0]);
+});
+conf.addEventListener('input', () => confVal.textContent = (conf.value/100).toFixed(2));
+
+async function runPredict(){
+  if(!chosen) return;
+  btn.disabled = true; spinner.style.display='block';
+  const fd = new FormData();
+  fd.append('image', chosen);
+  fd.append('conf', (conf.value/100).toFixed(2));
+  fd.append('mode', mode);
+  try {
+    const resp = await fetch('/predict', {method:'POST', body:fd});
+    const data = await resp.json();
+    if(data.error){ alert('识别失败：'+data.error); return; }
+    document.getElementById('headline').textContent = data.headline;
+    document.getElementById('resultImg').src = data.image;
+    const world = data.mode === 'world';
+    const nuts = data.mode === 'nuts';
+    document.getElementById('wasteBlock').style.display = (world || nuts) ? 'none' : 'block';
+    document.getElementById('objectBlock').style.display = world ? 'block' : 'none';
+    document.getElementById('nutBlock').style.display = nuts ? 'block' : 'none';
+    if(nuts){
+      const nb = document.querySelector('#nutTable tbody');
+      nb.innerHTML = '';
+      if(!data.detections.length){
+        nb.innerHTML = '<tr><td colspan="3" class="muted">未检测到坚果，试试调低置信度。</td></tr>';
+      } else {
+        data.detections.forEach(d => {
+          const tr = document.createElement('tr');
+          const box = (d.box||[]).map(v=>Math.round(v)).join(', ');
+          tr.innerHTML = `<td>${d.zh||'坚果'}</td><td>${d.score}</td><td>${box}</td>`;
+          nb.appendChild(tr);
+        });
+      }
+    } else if(world){
+      const ob = document.querySelector('#objTable tbody');
+      ob.innerHTML = '';
+      if(!data.objects.length){
+        ob.innerHTML = '<tr><td colspan="4" class="muted">未识别到词表内的物品，试试调低置信度。</td></tr>';
+      } else {
+        data.objects.forEach(o => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${o.zh}</td><td>${o.group}</td>`+
+            `<td>${o.count}</td><td>${o.best_score}</td>`;
+          ob.appendChild(tr);
+        });
+      }
+      document.getElementById('objNote').textContent =
+        `基于 ${data.vocab_size} 类词表的开放词汇识别；未收录物品会被近似成最相近类别，仅供参考。置信度低于 0.25 的结果多为误认，建议优先看高分项。`;
+    } else {
+      const tb = document.querySelector('#advTable tbody');
+      tb.innerHTML = '';
+      if(!data.items.length){
+        tb.innerHTML = '<tr><td colspan="4" class="muted">未识别到需要投放的垃圾。</td></tr>';
+      } else {
+        data.items.forEach(it => {
+          const tr = document.createElement('tr');
+          const colorMap = {'蓝色':'b-blue','绿色':'b-green','红色':'b-red','灰色':'b-gray'};
+          const binClass = colorMap[it.bin] || 'b-gray';
+          tr.innerHTML = `<td>${it.zh || it.label}</td><td>${it.count}</td>`+
+            `<td><span class="tag ${binClass}">${it.type} · ${it.bin}桶</span></td>`+
+            `<td>${it.advice}</td>`;
+          tb.appendChild(tr);
+        });
+      }
+      document.getElementById('nonWaste').textContent = data.non_waste || '';
+    }
+    document.getElementById('result').style.display='block';
+    document.getElementById('result').scrollIntoView({behavior:'smooth'});
+  } catch(err){ alert('请求失败：'+err); }
+  finally { btn.disabled = false; spinner.style.display='none'; }
+}
+btn.addEventListener('click', runPredict);
+
+// 加载示例图，点击后自动识别
+(async () => {
+  const box = document.getElementById('samples');
+  try {
+    const resp = await fetch('/samples');
+    const data = await resp.json();
+    data.items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'sample';
+      const img = document.createElement('img');
+      img.src = item.url; img.alt = item.name;
+      const cap = document.createElement('span');
+      cap.textContent = item.name.replace(/^\d+_/, '');
+      card.appendChild(img); card.appendChild(cap);
+      card.addEventListener('click', async () => {
+        const blob = await (await fetch(item.url)).blob();
+        chosen = new File([blob], 'sample.jpg', {type:'image/jpeg'});
+        preview.src = item.url; preview.style.display='block';
+        runPredict();
+      });
+      box.appendChild(card);
+    });
+  } catch(e){ box.textContent = '示例图加载失败'; }
+})();
+</script>
+</div>
+</body>
+</html>

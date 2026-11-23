@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "dataset": {
+    "default": "datasets/campus_trash/data.yaml",
+    "description": "校园垃圾检测：塑料瓶、纸张、纸板、玻璃、金属、其他垃圾共 6 类；按 datasets/campus_trash/README.md 采集并标注后可离线训练",
+    "num_classes": 6
+  },
+  "baseline": "E1",
+  "fast_set": ["E1", "E2", "E3"],
+  "experiments": [
+    {
+      "id": "E1",
+      "name": "基准：yolov8n / 320 / conf=0.25",
+      "model": "yolov8n.pt",
+      "imgsz": 320,
+      "conf": 0.25,
+      "iou": 0.7,
+      "hypothesis": "最小模型与低分辨率，速度最快，作为垃圾分类识别的基准线"
+    },
+    {
+      "id": "E2",
+      "name": "提高输入分辨率：640",
+      "model": "yolov8n.pt",
+      "imgsz": 640,
+      "conf": 0.25,
+      "iou": 0.7,
+      "hypothesis": "瓶罐、纸片等小目标在低分辨率下易漏检，提高分辨率后 mAP 应上升但耗时增加"
+    },
+    {
+      "id": "E3",
+      "name": "提高置信度阈值：0.50",
+      "model": "yolov8n.pt",
+      "imgsz": 640,
+      "conf": 0.5,
+      "iou": 0.7,
+      "hypothesis": "过滤低置信框可减少误投建议，Precision 上升、Recall 下降，体现 P-R 权衡"
+    },
+    {
+      "id": "E4",
+      "name": "换更大模型：yolov8s",
+      "model": "yolov8s.pt",
+      "imgsz": 640,
+      "conf": 0.25,
+      "iou": 0.7,
+      "hypothesis": "更大模型对相似垃圾类别区分更好，但参数量与耗时明显上升；需额外下载权重"
+    }
+  ]
+}

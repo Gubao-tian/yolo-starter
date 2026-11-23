@@ -1,0 +1,6 @@
+# 真实 YOLO 模式（full）所需依赖；demo 模式不需要安装任何第三方包。
+# 建议用项目内虚拟环境安装：
+#   python -m venv .venv
+#   .venv\Scripts\python.exe -m pip install -r requirements.txt
+ultralytics>=8.3.0
+pillow>=10.0.0

@@ -1,0 +1,14 @@
+# 校园垃圾检测数据集模板（Ultralytics 格式）
+# 按同目录 README.md 准备图片与标签后，full 模式会自动使用本文件。
+path: datasets/campus_trash
+train: images/train
+val: images/val
+
+nc: 6
+names:
+  0: plastic
+  1: paper
+  2: cardboard
+  3: glass
+  4: metal
+  5: trash
