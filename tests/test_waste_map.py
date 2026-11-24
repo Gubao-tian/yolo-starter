@@ -121,5 +121,28 @@ class TestExtendedHouseholdRules(unittest.TestCase):
         self.assertFalse(waste_map.waste_advice("person")["is_waste"])
 
 
+class TestAdviceAccuracyForRealPhotos(unittest.TestCase):
+    """真实照片里背景物体与物品材质常被误判，建议文案需准确。"""
+
+    def test_dining_table_is_background_not_waste(self):
+        # 杯子刀具图里桌面/餐垫被框成 dining table，它是背景而非投放对象
+        info = waste_map.waste_advice("dining table")
+        self.assertFalse(info["is_waste"])
+
+    def test_knife_advice_warns_about_sharp_blade(self):
+        # 图中的菜刀不是一次性餐具，需提示包裹防扎伤
+        info = waste_map.waste_advice("knife")
+        self.assertTrue(info["is_waste"])
+        self.assertIn("包裹", info["advice"])
+        self.assertNotIn("一次性餐具", info["advice"])
+
+    def test_cup_advice_covers_ceramic_mug(self):
+        # 白色陶瓷马克杯不是一次性纸杯，但同样归其他垃圾
+        info = waste_map.waste_advice("cup")
+        self.assertEqual(info["type"], "其他垃圾")
+        self.assertIn("陶瓷", info["advice"])
+        self.assertNotIn("一次性杯子：", info["advice"])
+
+
 if __name__ == "__main__":
     unittest.main()
