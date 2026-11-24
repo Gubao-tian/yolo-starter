@@ -1,0 +1,296 @@
+{
+  "source": "runs/exp_nuts/results.csv (Ultralytics 真实训练日志，40 epochs)",
+  "model": "weights/yolov8n-nuts.pt",
+  "command": "python scripts/train_nuts.py --epochs 40",
+  "epochs": 40,
+  "final": {
+    "epoch": 40,
+    "map50": 0.80009,
+    "map5095": 0.70027,
+    "precision": 0.693,
+    "recall": 0.95
+  },
+  "best_map50": 0.80009,
+  "curve": [
+    {
+      "epoch": 1,
+      "map50": 0.00028,
+      "map5095": 4e-05,
+      "precision": 0.00133,
+      "recall": 0.1
+    },
+    {
+      "epoch": 2,
+      "map50": 0.46016,
+      "map5095": 0.25369,
+      "precision": 0.42767,
+      "recall": 0.5
+    },
+    {
+      "epoch": 3,
+      "map50": 0.46016,
+      "map5095": 0.25369,
+      "precision": 0.42767,
+      "recall": 0.5
+    },
+    {
+      "epoch": 4,
+      "map50": 4e-05,
+      "map5095": 1e-05,
+      "precision": 0.00069,
+      "recall": 0.05
+    },
+    {
+      "epoch": 5,
+      "map50": 4e-05,
+      "map5095": 1e-05,
+      "precision": 0.00069,
+      "recall": 0.05
+    },
+    {
+      "epoch": 6,
+      "map50": 0.00573,
+      "map5095": 0.00217,
+      "precision": 0.009,
+      "recall": 0.35
+    },
+    {
+      "epoch": 7,
+      "map50": 0.00573,
+      "map5095": 0.00217,
+      "precision": 0.009,
+      "recall": 0.35
+    },
+    {
+      "epoch": 8,
+      "map50": 0.03964,
+      "map5095": 0.01414,
+      "precision": 0.01281,
+      "recall": 0.6
+    },
+    {
+      "epoch": 9,
+      "map50": 0.03964,
+      "map5095": 0.01414,
+      "precision": 0.01281,
+      "recall": 0.6
+    },
+    {
+      "epoch": 10,
+      "map50": 0.00637,
+      "map5095": 0.0032,
+      "precision": 0.01041,
+      "recall": 0.3
+    },
+    {
+      "epoch": 11,
+      "map50": 0.00637,
+      "map5095": 0.0032,
+      "precision": 0.01041,
+      "recall": 0.3
+    },
+    {
+      "epoch": 12,
+      "map50": 0.06943,
+      "map5095": 0.02589,
+      "precision": 0.05203,
+      "recall": 0.6
+    },
+    {
+      "epoch": 13,
+      "map50": 0.06943,
+      "map5095": 0.02589,
+      "precision": 0.05203,
+      "recall": 0.6
+    },
+    {
+      "epoch": 14,
+      "map50": 0.06452,
+      "map5095": 0.02406,
+      "precision": 0.08873,
+      "recall": 0.6
+    },
+    {
+      "epoch": 15,
+      "map50": 0.06452,
+      "map5095": 0.02406,
+      "precision": 0.08873,
+      "recall": 0.6
+    },
+    {
+      "epoch": 16,
+      "map50": 0.05114,
+      "map5095": 0.02628,
+      "precision": 0.07655,
+      "recall": 0.35
+    },
+    {
+      "epoch": 17,
+      "map50": 0.05114,
+      "map5095": 0.02628,
+      "precision": 0.07655,
+      "recall": 0.35
+    },
+    {
+      "epoch": 18,
+      "map50": 0.06551,
+      "map5095": 0.0383,
+      "precision": 0.07725,
+      "recall": 0.65
+    },
+    {
+      "epoch": 19,
+      "map50": 0.06551,
+      "map5095": 0.0383,
+      "precision": 0.07725,
+      "recall": 0.65
+    },
+    {
+      "epoch": 20,
+      "map50": 0.08513,
+      "map5095": 0.05962,
+      "precision": 0.08724,
+      "recall": 0.9
+    },
+    {
+      "epoch": 21,
+      "map50": 0.08513,
+      "map5095": 0.05962,
+      "precision": 0.08724,
+      "recall": 0.9
+    },
+    {
+      "epoch": 22,
+      "map50": 0.08182,
+      "map5095": 0.05481,
+      "precision": 0.08507,
+      "recall": 0.85
+    },
+    {
+      "epoch": 23,
+      "map50": 0.08182,
+      "map5095": 0.05481,
+      "precision": 0.08507,
+      "recall": 0.85
+    },
+    {
+      "epoch": 24,
+      "map50": 0.10567,
+      "map5095": 0.07618,
+      "precision": 0.11269,
+      "recall": 0.8
+    },
+    {
+      "epoch": 25,
+      "map50": 0.10567,
+      "map5095": 0.07618,
+      "precision": 0.11269,
+      "recall": 0.8
+    },
+    {
+      "epoch": 26,
+      "map50": 0.11077,
+      "map5095": 0.08233,
+      "precision": 0.1174,
+      "recall": 0.8
+    },
+    {
+      "epoch": 27,
+      "map50": 0.11077,
+      "map5095": 0.08233,
+      "precision": 0.1174,
+      "recall": 0.8
+    },
+    {
+      "epoch": 28,
+      "map50": 0.11834,
+      "map5095": 0.08924,
+      "precision": 0.12399,
+      "recall": 0.75
+    },
+    {
+      "epoch": 29,
+      "map50": 0.11834,
+      "map5095": 0.08924,
+      "precision": 0.12399,
+      "recall": 0.75
+    },
+    {
+      "epoch": 30,
+      "map50": 0.14526,
+      "map5095": 0.11816,
+      "precision": 0.1456,
+      "recall": 1.0
+    },
+    {
+      "epoch": 31,
+      "map50": 0.14526,
+      "map5095": 0.11816,
+      "precision": 0.1456,
+      "recall": 1.0
+    },
+    {
+      "epoch": 32,
+      "map50": 0.16184,
+      "map5095": 0.13465,
+      "precision": 0.15893,
+      "recall": 0.9
+    },
+    {
+      "epoch": 33,
+      "map50": 0.16184,
+      "map5095": 0.13465,
+      "precision": 0.15893,
+      "recall": 0.9
+    },
+    {
+      "epoch": 34,
+      "map50": 0.20895,
+      "map5095": 0.17389,
+      "precision": 0.20683,
+      "recall": 0.9
+    },
+    {
+      "epoch": 35,
+      "map50": 0.20895,
+      "map5095": 0.17389,
+      "precision": 0.20683,
+      "recall": 0.9
+    },
+    {
+      "epoch": 36,
+      "map50": 0.27392,
+      "map5095": 0.2304,
+      "precision": 0.27349,
+      "recall": 0.95
+    },
+    {
+      "epoch": 37,
+      "map50": 0.27392,
+      "map5095": 0.2304,
+      "precision": 0.27349,
+      "recall": 0.95
+    },
+    {
+      "epoch": 38,
+      "map50": 0.41941,
+      "map5095": 0.3657,
+      "precision": 0.39702,
+      "recall": 0.95
+    },
+    {
+      "epoch": 39,
+      "map50": 0.41941,
+      "map5095": 0.3657,
+      "precision": 0.39702,
+      "recall": 0.95
+    },
+    {
+      "epoch": 40,
+      "map50": 0.80009,
+      "map5095": 0.70027,
+      "precision": 0.693,
+      "recall": 0.95
+    }
+  ]
+}

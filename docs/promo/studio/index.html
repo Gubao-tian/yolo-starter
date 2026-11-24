@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>yolo-starter · 可编辑宣传视频工程 (Studio)</title>
+<style>
+:root{
+  --ink:#16202E; --paper:#F6F8FA; --green:#16A34A; --blue:#2563EB;
+  --amber:#D97706; --muted:#5B6B7F; --line:#DCE4EC; --dark:#0F172A;
+  --sans:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Segoe UI",sans-serif;
+  --mono:ui-monospace,Consolas,Menlo,"Courier New",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:#E9EEF4;color:var(--ink);overflow:hidden}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+
+/* ---------- Studio chrome ---------- */
+#app{height:100vh;display:flex;flex-direction:column}
+#toolbar{height:58px;flex:0 0 58px;background:#fff;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:14px;padding:0 20px;box-shadow:0 1px 6px #16202e0a;z-index:5}
+.brand{font-weight:800;font-size:15px;letter-spacing:.2px;white-space:nowrap}
+.brand small{font-weight:500;color:var(--muted);font-size:12px;margin-left:8px}
+.tb-group{display:flex;gap:4px;background:#F1F5F9;border-radius:8px;padding:3px}
+.tb-group button{padding:5px 12px;border-radius:6px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.tb-group button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px #16202e1f}
+.tb-btn{padding:6px 13px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;font-weight:600;background:#fff}
+.tb-btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+#clock{font-family:var(--mono);font-size:13px;color:var(--muted);min-width:104px}
+.spacer{flex:1}
+.tb-hint{font-size:12px;color:var(--muted)}
+
+#workspace{flex:1;display:flex;min-height:0}
+#stageWrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;background:#DCE4EC}
+#stageBox{position:relative;transform-origin:center center;box-shadow:0 18px 60px #16202e2b;background:var(--paper)}
+#stage{width:1920px;height:1080px;position:relative;overflow:hidden;background:var(--paper);transform-origin:top left}
+#sidePanel{width:224px;flex:0 0 224px;background:#fff;border-left:1px solid var(--line);padding:16px 14px;overflow:auto}
+#sidePanel h3{font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:10px;text-transform:uppercase}
+#sceneList{display:flex;flex-direction:column;gap:5px}
+.scene-item{display:flex;gap:9px;align-items:center;padding:8px 9px;border-radius:7px;font-size:12.5px;text-align:left;width:100%;border:1px solid transparent}
+.scene-item:hover{background:#F1F5F9}
+.scene-item.on{background:#ECFDF3;border-color:#BBF7D0;color:#15803D;font-weight:700}
+.scene-item i{font-family:var(--mono);font-style:normal;color:var(--muted);font-size:11px;min-width:34px}
+.panel-note{margin-top:18px;font-size:11.5px;line-height:1.7;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+.panel-note code{font-family:var(--mono);font-size:10px;background:#F1F5F9;padding:1px 4px;border-radius:3px;white-space:nowrap}
+
+#timeline{height:104px;flex:0 0 104px;background:#fff;border-top:1px solid var(--line);padding:12px 20px}
+.tl-top{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:8px}
+#tlTrack{display:flex;height:56px;gap:3px;position:relative}
+.tl-block{flex:1 1 0;min-width:0;background:#F1F5F9;border-radius:6px;text-align:left;padding:7px 9px;overflow:hidden;border-bottom:3px solid transparent;transition:background .15s}
+.tl-block:hover{background:#E2E8F0}
+.tl-block.on{background:#ECFDF3;border-bottom-color:var(--green)}
+.tl-block b{display:block;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-block span{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+#playhead{position:absolute;top:-4px;bottom:-3px;width:2px;background:#DC2626;pointer-events:none;z-index:2}
+#playhead::before{content:"";position:absolute;top:0;left:-4px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid #DC2626}
+
+/* ---------- Stage shared ---------- */
+.scene{position:absolute;inset:0;overflow:hidden;background:var(--paper);padding:96px}
+.kicker{display:inline-block;font-size:22px;font-weight:700;letter-spacing:2px;color:var(--green);
+  border-left:5px solid var(--green);padding-left:14px;margin-bottom:24px}
+h1{font-size:92px;line-height:1.16;letter-spacing:-2px;font-weight:800}
+h2{font-size:58px;line-height:1.28;letter-spacing:-1px;font-weight:800}
+h3{font-size:36px;line-height:1.35;font-weight:700}
+p{font-size:30px;line-height:1.6;color:var(--muted)}
+em{font-style:normal;color:var(--green)}
+.mono{font-family:var(--mono)}
+.tag{display:inline-block;font-family:var(--mono);font-size:19px;padding:8px 15px;border-radius:7px;
+  background:#E8EEF6;color:#334155;border:1px solid var(--line)}
+.badge-real{position:absolute;top:40px;right:44px;font-size:17px;font-weight:700;color:#15803D;
+  background:#ECFDF3;border:1px solid #BBF7D0;border-radius:999px;padding:9px 18px}
+.warn{font-size:19px;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:9px;padding:12px 16px;line-height:1.55}
+.src{font-family:var(--mono);font-size:15px;color:#7C8BA0}
+#subtitle{position:absolute;left:0;right:0;bottom:30px;text-align:center;font-size:34px;font-weight:600;
+  color:var(--ink);text-shadow:0 2px 12px #ffffffcc;z-index:20;pointer-events:none;padding:0 120px}
+#sourceTag{position:absolute;right:44px;bottom:96px;font-family:var(--mono);font-size:15px;
+  color:#8A98AA;z-index:20;pointer-events:none;background:#ffffffd9;padding:5px 10px;border-radius:5px}
+#progressBar{position:absolute;left:0;bottom:0;height:5px;background:var(--green);z-index:21;width:0}
+.no-sub #subtitle{display:none}
+body.dark-scene #subtitle{color:#F1F5F9;text-shadow:0 2px 14px #000000aa}
+body.dark-scene #sourceTag{color:#94A3B8;background:#0f172acc}
+body.dark-scene #progressBar{background:#4ADE80}
+
+/* ---------- Scene: hook ---------- */
+.sc-hook{padding:0;background:var(--dark)}
+.sc-hook .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:60% 50%}
+.sc-hook .shade{position:absolute;inset:0;background:linear-gradient(100deg,#0B1220f2 0%,#0B1220d9 46%,#0B122033 100%)}
+.sc-hook .copy{position:absolute;left:110px;top:300px;color:#fff;max-width:1080px}
+.sc-hook .kicker{color:#4ADE80;border-color:#4ADE80}
+.sc-hook h1{color:#fff;font-size:96px}
+.sc-hook p{color:#CBD5E1;margin-top:30px;font-size:34px}
+.sc-hook .badge-real{color:#86EFAC;background:#052e1688;border-color:#166534}
+.sc-hook .chiprow{position:absolute;right:96px;bottom:120px;display:flex;gap:14px}
+.sc-hook .chip{width:150px;height:112px;border-radius:12px;overflow:hidden;border:3px solid #ffffff44}
+.sc-hook .chip img{width:100%;height:100%;object-fit:cover}
+
+/* ---------- Scene: pipeline ---------- */
+.flow{display:flex;gap:26px;margin-top:64px;position:relative}
+.node{flex:1;background:#fff;border:2px solid var(--line);border-radius:16px;padding:30px 26px;min-height:230px;
+  box-shadow:0 8px 26px #16202e0d;opacity:0;transform:translateY(28px)}
+.node .num{font-family:var(--mono);font-size:20px;color:var(--blue);font-weight:700}
+.node .tt{font-family:var(--mono);font-size:26px;font-weight:700;margin:18px 0 12px;word-break:break-all}
+.node .dd{font-size:22px;color:var(--muted);line-height:1.5}
+.node.lit{border-color:#93C5FD;box-shadow:0 10px 34px #2563eb1f}
+.foot-note{margin-top:56px;font-size:26px;color:var(--muted);border-top:2px solid var(--line);padding-top:28px}
+
+/* ---------- Scene: detect ---------- */
+.sc-detect{display:flex;gap:64px;align-items:center}
+.img-frame{position:relative;height:760px;background:#111;box-shadow:0 20px 60px #16202e33;flex:0 0 auto;border-radius:8px;overflow:hidden}
+.img-frame>img{position:absolute;inset:0;width:100%;height:100%;display:block}
+.dbox{position:absolute;border:5px solid #22C55E;border-radius:2px;opacity:0;transform:scale(.94);
+  box-shadow:0 0 0 2px #00000055, 0 6px 20px #00000044}
+.dlabel{position:absolute;top:6px;left:6px;background:#22C55E;color:#052E16;font-family:var(--mono);
+  font-size:20px;font-weight:800;padding:5px 10px;white-space:nowrap;border-radius:4px}
+.side{flex:1;min-width:0}
+.conf-list{margin-top:34px;display:flex;flex-direction:column;gap:14px}
+.conf-row{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--line);
+  border-radius:10px;padding:14px 18px;font-family:var(--mono);font-size:25px;opacity:0;transform:translateY(18px)}
+.conf-row b{color:var(--green);min-width:92px}
+.conf-row span{color:var(--muted);font-size:21px;font-family:var(--sans)}
+.mini{font-size:19px;margin-top:30px;color:var(--muted);font-family:var(--mono)}
+
+/* ---------- Scene: decision ---------- */
+.sc-decision{display:flex;gap:64px;align-items:center}
+.rules{margin-top:44px;display:flex;flex-direction:column;gap:16px;width:760px}
+.rule{display:flex;align-items:center;gap:20px;background:#fff;border:1px solid var(--line);
+  border-left:7px solid var(--green);border-radius:10px;padding:18px 24px;font-size:29px;opacity:0;transform:translateY(20px)}
+.rule .obj{flex:1;font-weight:700}
+.rule .arrow{color:var(--muted);font-size:26px}
+.rule .bin{font-weight:800;color:#15803D;background:#ECFDF3;padding:6px 16px;border-radius:7px}
+.right-card{width:640px;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  box-shadow:0 12px 40px #16202e14;opacity:0;transform:translateY(24px)}
+.right-card img{width:100%;height:420px;object-fit:cover;display:block}
+.right-card .cap{padding:22px 26px;font-size:26px;font-weight:700}
+.right-card .cap small{display:block;font-size:20px;font-weight:400;color:var(--muted);margin-top:8px}
+
+/* ---------- Scene: demo ---------- */
+.sc-demo{display:flex;flex-direction:column}
+.shot{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  box-shadow:0 14px 44px #16202e18;opacity:0;transform:translateY(24px)}
+.shot img{width:100%;display:block}
+.sc-demo .shot img{height:540px;object-fit:contain;background:#F8FAFC}
+.modes{display:flex;gap:16px;margin-top:30px}
+.chip2{flex:1;background:#fff;border:2px solid var(--line);border-radius:10px;padding:18px 12px;
+  text-align:center;font-size:24px;font-weight:700;opacity:0;transform:translateY(16px)}
+.chip2.on{border-color:var(--blue);background:#EFF6FF;color:#1D4ED8}
+.sc-demo .lead{margin-top:30px;font-size:29px;color:var(--muted)}
+
+/* ---------- Scene: comparison ---------- */
+.compare{display:flex;gap:30px;align-items:stretch;margin-top:60px}
+.col{flex:1;background:#fff;border:2px solid var(--line);border-radius:18px;padding:38px 40px;min-height:340px;
+  opacity:0;transform:translateY(26px)}
+.col.new{border-color:#86EFAC;background:#F0FDF4}
+.col .tt{font-size:27px;font-weight:700;color:var(--muted)}
+.col .big{font-family:var(--mono);font-size:150px;font-weight:800;line-height:1.15;letter-spacing:-6px;color:var(--ink)}
+.col.new .big{color:var(--green)}
+.col .unit{font-size:27px;color:var(--muted)}
+.vs{font-family:var(--mono);font-weight:800;font-size:38px;color:#94A3B8;align-self:center}
+.ab-foot{margin-top:42px;font-size:24px;color:var(--muted)}
+
+/* ---------- Scene: dense + curve ---------- */
+.digits{display:flex;align-items:baseline;gap:28px;margin-top:48px}
+.digit{font-family:var(--mono);font-size:132px;font-weight:800;line-height:1;color:var(--ink);opacity:0;transform:translateY(24px)}
+.digit.hi{color:var(--green)}
+.darrow{font-size:64px;color:#94A3B8}
+.digit-unit{font-size:34px;color:var(--muted)}
+.chart{margin-top:44px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px 30px;display:flex;gap:34px;align-items:center}
+.chart svg{width:820px;height:230px;overflow:visible}
+.chart .grid{stroke:#E8EEF5;stroke-width:1.5}
+.chart .curve{fill:none;stroke:var(--green);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.chart .curve2{fill:none;stroke:var(--blue);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
+.chart-meta{flex:1}
+.chart-meta .k{font-size:22px;color:var(--muted)}
+.chart-meta .v{font-family:var(--mono);font-size:60px;font-weight:800;color:var(--green);margin:6px 0 18px}
+.chart-meta .l{font-size:20px;color:var(--muted);line-height:1.7}
+
+/* ---------- Scene: repro ---------- */
+.sc-repro{display:flex;gap:56px;align-items:center}
+.sc-repro .shot{width:1000px;flex:0 0 1000px;max-height:760px;overflow:hidden}
+.sc-repro .shot img{object-fit:cover;object-position:top}
+.sc-repro .right{flex:1;min-width:0}
+.cmd{display:block;margin-top:34px;font-family:var(--mono);font-size:23px;background:var(--dark);color:#4ADE80;
+  border-radius:10px;padding:20px 22px;min-height:72px;white-space:nowrap;overflow:hidden}
+.badges{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.badges span{font-size:21px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 15px}
+.sc-repro .warn{margin-top:30px}
+
+/* ---------- Scene: cta ---------- */
+.sc-cta{background:var(--dark);color:#fff;padding:110px}
+.sc-cta .kicker{color:#4ADE80;border-color:#4ADE80}
+.sc-cta .q{display:flex;flex-direction:column;gap:22px;margin-top:44px}
+.sc-cta .q div{font-size:37px;color:#E2E8F0;opacity:0;transform:translateY(18px)}
+.sc-cta .q b{color:#4ADE80;margin-right:20px;font-size:26px;font-family:var(--mono)}
+.repo{margin-top:64px;font-family:var(--mono);font-size:56px;font-weight:800;color:#fff;letter-spacing:-1px;
+  border-bottom:4px solid #4ADE80;padding-bottom:16px;display:inline-block;opacity:0;transform:translateY(22px)}
+.cta-cmd{margin-top:34px;font-family:var(--mono);font-size:29px;color:#94A3B8;opacity:0}
+.cta-foot{margin-top:52px;font-size:24px;color:#64748B;opacity:0}
+
+/* ---------- Generic 90s scenes ---------- */
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:26px;margin-top:52px}
+.card{background:#fff;border:1px solid var(--line);border-left:8px solid var(--blue);border-radius:14px;
+  padding:30px 34px;opacity:0;transform:translateY(24px)}
+.card .t{font-size:34px;font-weight:800;margin-bottom:14px}
+.card .d{font-size:24px;color:var(--muted);line-height:1.6}
+.split{display:flex;gap:60px;align-items:center;margin-top:46px}
+.split .txt{flex:1}
+.split .txt ul{margin-top:28px;list-style:none;display:flex;flex-direction:column;gap:18px}
+.split .txt li{font-size:27px;background:#fff;border:1px solid var(--line);border-radius:9px;
+  padding:16px 22px;opacity:0;transform:translateY(16px)}
+.split .txt li b{color:var(--green);font-family:var(--mono);margin-right:14px}
+.split .pic{flex:0 0 760px;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  box-shadow:0 14px 44px #16202e18;opacity:0;transform:translateY(24px)}
+.split .pic img{width:100%;display:block}
+
+/* ---------- Export mode ---------- */
+body.export{background:var(--paper)}
+body.export #toolbar,body.export #sidePanel,body.export #timeline{display:none}
+body.export #app,body.export #workspace,body.export #stageWrap{display:block;position:static;width:1920px;height:1080px;overflow:hidden;padding:0;background:var(--paper)}
+body.export #stageBox{box-shadow:none;transform:none!important;width:1920px;height:1080px}
+body.export #stage{transform:none!important}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="toolbar">
+    <div class="brand">yolo-starter <small>OpenMotion 风格可编辑视频工程 · Studio</small></div>
+    <div class="tb-group" id="versionGroup">
+      <button data-v="15">15s</button><button data-v="45" class="on">45s</button><button data-v="90">90s</button>
+    </div>
+    <button class="tb-btn primary" id="playBtn">▶ 播放</button>
+    <span id="clock">00:00.0 / 00:45.0</span>
+    <button class="tb-btn" id="subBtn">字幕 开</button>
+    <button class="tb-btn" id="exportBtn">导出 MP4</button>
+    <span class="spacer"></span>
+    <span class="tb-hint">空格播放 · ← → 跳 1s · 点击时间线跳转 · 改 SCENES 即改片</span>
+  </header>
+
+  <div id="workspace">
+    <div id="stageWrap">
+      <div id="stageBox">
+        <div id="stage">
+          <div id="sceneHost"></div>
+          <div id="sourceTag"></div>
+          <div id="subtitle"></div>
+          <div id="progressBar"></div>
+        </div>
+      </div>
+    </div>
+    <aside id="sidePanel">
+      <h3>场景列表</h3>
+      <div id="sceneList"></div>
+      <div class="panel-note">
+        <b>可编辑说明</b><br>
+        时间线在 <code>index.html</code> 的 <code>SCENES</code>，实测数据在 <code>data.js</code>（由 <code>tools/build_data.py</code> 生成）。<br><br>
+        任何时间点都可直接跳转，画面由 <code>renderAt(t)</code> 确定性计算 —— 这是逐帧导出 MP4 的基础。<br><br>
+        导出：<code>node export/record.mjs --v 45</code>
+      </div>
+    </aside>
+  </div>
+
+  <footer id="timeline">
+    <div class="tl-top"><span>Studio 时间线 · 场景块按真实时长比例排列</span><span id="tlInfo"></span></div>
+    <div id="tlTrack"><div id="playhead"></div></div>
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+"use strict";
+const D = window.PROMO_DATA || {detections:{shots:[]},training:{curve:[]},repo_short:"github.com/Gubao-tian/yolo-starter"};
+const A = "../assets/";
+const Q = new URLSearchParams(location.search);
+const EXPORT = Q.get("export") === "1";
+if (EXPORT) document.body.classList.add("export");
+
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const ease=p=>1-Math.pow(1-clamp(p),3);
+const band=(p,a,b)=>clamp((p-a)/(b-a));
+const fmt=t=>`${String(Math.floor(t/60)).padStart(2,"0")}:${(t%60).toFixed(1).padStart(4,"0")}`;
+function reveal(el,p,a,b,dy=26){const v=ease(band(p,a,b));el.style.opacity=v;el.style.transform=`translateY(${dy*(1-v)}px)`;}
+function stagger(nodes,p,a=.06,span=.36,dy=24){const n=Math.max(nodes.length,1);
+  nodes.forEach((el,i)=>reveal(el,p,a+i*span/n,a+(i+1)*span/n+.12,dy));}
+function countTo(el,p,a,b,target,dec=0){el.textContent=(target*ease(band(p,a,b))).toFixed(dec);}
+const shot=k=>D.detections.shots.find(s=>s.key===k)||{boxes:[],width:4,height:3};
+function boxesHTML(key){return shot(key).boxes.map((b,i)=>
+  `<div class="dbox" style="left:${b.xywh_norm[0]*100}%;top:${b.xywh_norm[1]*100}%;width:${b.xywh_norm[2]*100}%;height:${b.xywh_norm[3]*100}%;border-color:${i===0?"#F97316":"#22C55E"}">
+   <span class="dlabel" style="background:${i===0?"#F97316":"#22C55E"}">${b.cls} ${b.conf.toFixed(2)}</span></div>`).join("");}
+function curvePath(field,w=800,h=200,pad=12){
+  const cs=D.training.curve||[],max=Math.max(1,...cs.map(c=>c[field]));
+  return cs.map((c,i)=>`${i?"L":"M"} ${(pad+i/Math.max(cs.length-1,1)*(w-2*pad)).toFixed(1)} ${(h-pad-c[field]/max*(h-2*pad)).toFixed(1)}`).join(" ");
+}
+
+/* ========================================================================
+   TIMELINE — the single editable source of truth.
+   Each entry: {id, dur, label, subtitle, source, ...scene options}
+   ======================================================================== */
+const S=(id,dur,label,subtitle,source,opts={})=>({id,dur,label,subtitle,source,...opts});
+const SCENES={
+ "15":[
+  S("hook",2.5,"问题","一张照片里，哪些是垃圾？","assets/photo_01_multi.jpg"),
+  S("detect",4.5,"真实检测","真实 YOLOv8 推理：框出来，还带置信度","assets/detections.json"),
+  S("dense",4,"A/B 结果","0 → 87 → 13 本；微调 40 epoch，mAP@0.50 0.80","test_images/README.md · runs/exp_nuts/results.csv"),
+  S("cta",4,"GitHub CTA","github.com/Gubao-tian/yolo-starter","README.md")
+ ],
+ "45":[
+  S("hook",4,"问题","一张照片里，哪些是垃圾？该投哪个桶？","assets/photo_01_multi.jpg"),
+  S("pipeline",7,"方案","不是 notebook，是一条能跑、能测、能讲的链路","docs/DESIGN.md"),
+  S("detect",6,"真实检测","真实 YOLOv8 推理：框出来，还带置信度","assets/detections.json · Ultralytics 8.4.216"),
+  S("decision",5,"决策","YOLO 管「是什么、在哪」，规则表管「投哪个桶」","src/yolo_starter/trash_rules.py"),
+  S("demo",5,"Demo","上传一张照片 → 真实推理 → 检测框 + 投放建议","assets/webapp.png"),
+  S("vocab",5,"A/B · 词表","固定 80 类 → 3 类；开放词汇 → 10 类 20 件","test_images/README.md"),
+  S("dense",5,"A/B · 小目标","0 → 87 → 13 本；微调 40 epoch，mAP@0.50 0.80","test_images/README.md · runs/exp_nuts/results.csv"),
+  S("repro",4,"复现","零 GPU · 零联网 · 一条命令","README.md · assets/dashboard.png"),
+  S("cta",4,"GitHub CTA","解决了什么 / 为什么值得试 / 如何开始","README.md")
+ ],
+ "90":[
+  S("hook",4,"问题","一张照片里，哪些是垃圾？该投哪个桶？","assets/photo_01_multi.jpg"),
+  S("pipeline",7,"方案","不是 notebook，是一条能跑、能测、能讲的链路","docs/DESIGN.md"),
+  S("cards",8,"四项能力","课程要的四件事，都做成了可验证的交付物","docs/DESIGN.md",{title:"能看 · 能跑 · 能对比 · 能复述",cards:[
+    ["能看","reports/index.html 离线看板：检测框、投放建议表、三张柱状图、自动结论"],
+    ["能跑","scripts/run_all.py 一键产出全部文件；scripts/check.py 自检；103 个 unittest"],
+    ["能对比","E1~E4 受控实验，统一指标口径，以 E1 为基线给出 Δ 值与自动结论"],
+    ["能复述","README + docs/WALKTHROUGH.md 5 分钟讲稿 + docs/CHECKLIST.md 验收清单"]]}),
+  S("detect",6,"真实检测","真实 YOLOv8 推理：框出来，还带置信度","assets/detections.json · Ultralytics 8.4.216"),
+  S("decision",5,"决策","YOLO 管「是什么、在哪」，规则表管「投哪个桶」","src/yolo_starter/trash_rules.py"),
+  S("split",10,"网页 Demo","上传自己的照片 → YOLOv8 真实识别 → 检测框 → 投放建议","README.md · assets/webapp.png",{
+    title:"不用配环境，打开网页就能试",image:"webapp.png",points:[
+      ["4 种模式","垃圾分类 / 全物体提取 / 密集书本 / 坚果识别"],
+      ["8 张示例图","COCO 公开数据集真实照片，点一下即自动识别"],
+      ["conf 滑块","现场调阈值，直观看 Precision-Recall 取舍"],
+      ["真实推理","与静态看板的教学示例数据明确区分"]]}),
+  S("demo",5,"Demo","四种模式，覆盖从固定 80 类到开放词汇","assets/webapp.png"),
+  S("vocab",5,"A/B · 词表","固定 80 类 → 3 类；开放词汇 → 10 类 20 件","test_images/README.md"),
+  S("dense",7,"A/B · 小目标","0 → 87 → 13 本；微调 40 epoch，mAP@0.50 0.80","test_images/README.md · runs/exp_nuts/results.csv"),
+  S("cards",7,"真实性边界","demo 与 full 双模式：示例数据与真实推理不混用","docs/DESIGN.md · outputs/results.json",{title:"哪些数字能拿去汇报，项目里写得很清楚",cards:[
+    ["demo 模式","零第三方依赖、零联网、零 GPU；指标与检测框是教学示例值，看板有「演示数据」标记"],
+    ["full 模式","真实 Ultralytics YOLOv8 训练/验证/推理，不混入示例投放建议"],
+    ["共用口径","两种模式共用实验配置、指标归一化、可视化与报告代码"],
+    ["真实证据","本次视频的检测框、训练曲线、A/B 数字全部来自实测产物"]]}),
+  S("cards",6,"测试与讲稿","工程化交付，不只是一段 notebook","README.md",{title:"可验证，才可复述",cards:[
+    ["103 个 unittest","python -m unittest discover -s tests -v"],
+    ["离线看板","不加载任何 CDN，双击即可打开"],
+    ["5 分钟讲稿","docs/WALKTHROUGH.md 含答辩 Q&A 12 问"],
+    ["验收清单","docs/CHECKLIST.md 逐项勾选"]]}),
+  S("cards",6,"常见问题","没有 GPU、没有网络，也能完整演示","README.md",{title:"现场最容易踩的四个问题，都写进 README",cards:[
+    ["没有 GPU 能跑吗","能。demo 完全不需要；full 用 CPU 也能跑，只是慢一些"],
+    ["没有网络怎么办","用 demo 模式，所有产物离线生成与打开"],
+    ["看板打开空白","确认是完整的 reports/index.html，不加载 CDN"],
+    ["换检测对象","改 data.yaml 类别 + trash_rules.py 投放建议表"]]}),
+  S("repro",6,"复现","零 GPU · 零联网 · 一条命令","README.md · assets/dashboard.png"),
+  S("cta",8,"GitHub CTA","解决了什么 / 为什么值得试 / 如何开始","README.md")
+ ]
+};
+function buildTimeline(v){let t=0;return SCENES[v].map(s=>{const o={...s,start:t};t+=s.dur;return o;});}
+
+/* ========================================================================
+   RENDERERS — deterministic render(el, p). No CSS animation, so any frame
+   can be reproduced at any time (required for frame-by-frame MP4 export).
+   ======================================================================== */
+const R={
+ hook:{html:()=>`
+   <div class="scene sc-hook">
+     <img class="bg" src="${A}photo_01_multi.jpg">
+     <div class="shade"></div>
+     <div class="copy">
+       <div class="kicker">YOLO-STARTER · 真实照片</div>
+       <h1>一张照片里，<br><em>哪些是垃圾？</em></h1>
+       <p>该投哪个桶？让模型自己说清楚。</p>
+     </div>
+     <div class="badge-real">真实素材 · 非生成</div>
+     <div class="chiprow">
+       <div class="chip"><img src="${A}photo_02_kitchen.jpg"></div>
+       <div class="chip"><img src="${A}photo_05_recycle.jpg"></div>
+       <div class="chip"><img src="${A}photo_07_people.jpg"></div>
+     </div>
+   </div>`,
+  update:(el,p)=>{
+    const bg=el.querySelector(".bg");bg.style.transform=`scale(${1+.09*ease(p)})`;
+    el.querySelector(".shade").style.opacity=clamp(.6+.4*band(p,0,.3));
+    reveal(el.querySelector(".kicker"),p,.01,.16,20);
+    reveal(el.querySelector("h1"),p,.06,.28,34);
+    reveal(el.querySelector(".copy p"),p,.18,.4,26);
+    [...el.querySelectorAll(".chip")].forEach((c,i)=>reveal(c,p,.28+i*.06,.45+i*.06,20));
+  }},
+
+ pipeline:{html:()=>`
+   <div class="scene sc-pipeline">
+     <span class="kicker">方案 · ARCHITECTURE</span>
+     <h2>不是 notebook，<br>是一条能跑、能测、能讲的链路</h2>
+     <div class="flow">
+       ${[["01","configs/<br>experiments.json","实验配置：模型 / 分辨率 / conf"],
+          ["02","scripts/<br>run_all.py","一键产出全部文件"],
+          ["03","demo / full<br>双模式","零依赖示例 ↔ 真实 YOLOv8"],
+          ["04","outputs/ +<br>reports/","指标 CSV/JSON、离线看板、自动结论"]]
+        .map(n=>`<div class="node"><div class="num">${n[0]}</div><div class="tt">${n[1]}</div><div class="dd">${n[2]}</div></div>`).join("")}
+     </div>
+     <div class="foot-note">双模式共用实验配置 · 指标口径 · 可视化 · 报告代码　|　来源：docs/DESIGN.md</div>
+   </div>`,
+  update:(el,p)=>{
+    reveal(el.querySelector(".kicker"),p,0,.1,18);
+    reveal(el.querySelector("h2"),p,.03,.2,28);
+    const ns=[...el.querySelectorAll(".node")];
+    ns.forEach((n,i)=>{const v=band(p,.08+i*.08,.24+i*.08);n.style.opacity=ease(v);n.style.transform=`translateY(${28*(1-ease(v))}px)`;n.classList.toggle("lit",v>.85);});
+    reveal(el.querySelector(".foot-note"),p,.45,.62,20);
+  }},
+
+ detect:{html:()=>{
+   const s=shot("01_multi");return `
+   <div class="scene sc-detect">
+     <div class="img-frame" style="width:${(760*s.width/s.height).toFixed(0)}px;aspect-ratio:${s.width}/${s.height}">
+       <img src="${A}photo_01_multi.jpg">${boxesHTML("01_multi")}
+     </div>
+     <div class="side">
+       <span class="kicker">DEMO · 真实 YOLOv8 推理</span>
+       <h2>框出来，<br>还带置信度</h2>
+       <div class="conf-list">${s.boxes.map(b=>`<div class="conf-row"><b>${b.conf.toFixed(2)}</b>${b.cls}<span>${b.label_zh}</span></div>`).join("")}</div>
+       <p class="mini">Ultralytics 8.4.216 · yolov8n.pt · CPU · imgsz 640 · conf 0.25<br>框坐标与置信度来自 assets/detections.json，非人工填写</p>
+     </div>
+   </div>`;},
+  update:(el,p)=>{
+    reveal(el.querySelector(".kicker"),p,0,.1,18);
+    reveal(el.querySelector("h2"),p,.03,.2,26);
+    const bs=[...el.querySelectorAll(".dbox")];
+    bs.forEach((b,i)=>{const v=band(p,.08+i*.08,.24+i*.08);b.style.opacity=ease(v);b.style.transform=`scale(${.94+.06*ease(v)})`;});
+    stagger([...el.querySelectorAll(".conf-row")],p,.14,.3,18);
+    reveal(el.querySelector(".mini"),p,.5,.68,16);
+  }},
+
+ decision:{html:()=>`
+   <div class="scene sc-decision">
+     <div style="flex:1">
+       <span class="kicker">决策 · RULES</span>
+       <h2>YOLO 管「是什么、在哪」<br>规则表管「投哪个桶」</h2>
+       <div class="rules">
+         ${[["电视 tv","有害垃圾"],["塑料瓶 bottle","可回收"],["书本 book","可回收"],["碗 bowl","其他垃圾"]]
+           .map(r=>`<div class="rule"><span class="obj">${r[0]}</span><span class="arrow">→</span><span class="bin">${r[1]}</span></div>`).join("")}
+       </div>
+     </div>
+     <div class="right-card">
+       <img src="${A}detect_07_people.jpg">
+       <div class="cap">人 / 猫 → 不产生投放建议<small>非垃圾对象被正确排除，规则表不硬凑结果</small></div>
+     </div>
+   </div>`,
+  update:(el,p)=>{
+    reveal(el.querySelector(".kicker"),p,0,.1,18);
+    reveal(el.querySelector("h2"),p,.03,.2,26);
+    stagger([...el.querySelectorAll(".rule")],p,.12,.3,20);
+    reveal(el.querySelector(".right-card"),p,.3,.5,26);
+  }},
+
+ demo:{html:()=>`
+   <div class="scene sc-demo">
+     <span class="kicker">DEMO · 真实网页界面</span>
+     <h2>上传一张照片，就能真实识别</h2>
+     <div class="shot" style="max-width:1300px"><img src="${A}webapp.png"></div>
+     <div class="modes">
+       ${["垃圾分类 (80 类)","全物体提取","密集书本","坚果识别"].map(m=>`<div class="chip2">${m}</div>`).join("")}
+     </div>
+     <p class="lead">真实 Flask 网页 · 上传照片 → YOLOv8 推理 → 检测框 + 投放建议</p>
+   </div>`,
+  update:(el,p)=>{
+    reveal(el.querySelector(".kicker"),p,0,.1,18);
+    reveal(el.querySelector("h2"),p,.03,.2,24);
+    reveal(el.querySelector(".shot"),p,.08,.26,26);
+    const cs=[...el.querySelectorAll(".chip2")];
+    cs.forEach((c,i)=>{const v=band(p,.2+i*.055,.32+i*.055);c.style.opacity=ease(v);c.style.transform=`translateY(${16*(1-ease(v))}px)`;
+      c.classList.toggle("on",p>.22+i*.055 && p<.22+(i+1)*.055+.1);});
+    reveal(el.querySelector(".lead"),p,.48,.65,18);
+  }},
+
+ vocab:{html:()=>`
+   <div class="scene">
+     <span class="kicker">A/B 结果 · 词表</span>
+     <h2>同一张饭盒图，换个模式</h2>
+     <div class="compare">
+       <div class="col"><div class="tt">垃圾分类模式 · COCO 固定 80 类</div><div class="big" id="c1">0</div><div class="unit">类物品</div></div>
+       <div class="vs">VS</div>
+       <div class="col new"><div class="tt">全物体提取 · 117 类开放词表</div><div class="big" id="c2">0</div><div class="unit">类 / 20 件 · 面包 / 柠檬 / 碗 / 鸡蛋 …</div></div>
+     </div>
+     <p class="ab-foot">开放词汇是近似识别：菠萝被认成柠檬 / 橙子，属模型特性而非 bug　·　实测记录见 test_images/README.md</p>
+   </div>`,
+  update:(el,p)=>{
+    reveal(el.querySelector(".kicker"),p,0,.1,18);
+    reveal(el.querySelector("h2"),p,.03,.2,24);
+    stagger([...el.querySelectorAll(".col")],p,.1,.2,26);
+    countTo(el.querySelector("#c1"),p,.18,.45,3);
+    countTo(el.querySelector("#c2"),p,.18,.45,10);
+    reveal(el.querySelector(".ab-foot"),p,.5,.68,18);
+  }},
+
+ dense:{html:()=>`
+   <div class="scene">
+     <span class="kicker">A/B 结果 · 密集小目标 + 真实训练曲线</span>
+     <h2>阈值与切片，决定能看见多少</h2>
+     <div class="digits">
+       <div class="digit" id="d1">0</div><div class="darrow">→</div>
+       <div class="digit hi" id="d2">0</div><div class="darrow">→</div>
+       <div class="digit" id="d3">0</div><div class="digit-unit">本</div>
+     </div>
+     <p style="font-size:25px;margin-top:20px">密集书架实测：默认检测 0 本 → 切片推理 87 本 → conf 0.35 剩 13 本</p>
+     <div class="chart">
+       <svg viewBox="0 0 800 200" preserveAspectRatio="none">
+         ${[40,80,120,160].map(y=>`<line class="grid" x1="0" y1="${y}" x2="800" y2="${y}"/>`).join("")}
+         <path class="curve2" d="${curvePath("map5095")}"/>
+         <path class="curve"  d="${curvePath("map50")}"/>
+       </svg>
+       <div class="chart-meta">
+         <div class="k">坚果微调模型 · 40 epoch 真实训练</div>
+         <div class="v" id="mapv">0.00</div>
+         <div class="l">mAP@0.50 0.80009<br>mAP@0.50:0.95 0.70027<br>Recall 0.95<br>来源：runs/exp_nuts/results.csv</div>
+       </div>
+     </div>
+   </div>`,
+  update:(el,p)=>{
+    reveal(el.querySelector(".kicker"),p,0,.1,18);
+    reveal(el.querySelector("h2"),p,.03,.18,24);
+    [["#d1",0,.1,.22],["#d2",87,.18,.34],["#d3",13,.28,.44]].forEach(([sel,v,a,b])=>{
+      const n=el.querySelector(sel);countTo(n,p,a,b,v);reveal(n,p,a-.05,a+.12,22);});
+    const paths=[...el.querySelectorAll("path.curve,path.curve2")];
+    paths.forEach(pt=>{const L=pt.getTotalLength?pt.getTotalLength():2200;pt.style.strokeDasharray=L;
+      pt.style.strokeDashoffset=L*(1-ease(band(p,.3,.6)));});
+    countTo(el.querySelector("#mapv"),p,.3,.58,0.80,2);
+    reveal(el.querySelector(".chart"),p,.26,.44,22);
+  }},
+
+ repro:{html:()=>`
+   <div class="scene sc-repro">
+     <div class="shot"><img src="${A}dashboard.png"></div>
+     <div class="right">
+       <span class="kicker">可复现 · REPRODUCE</span>
+       <h2>零 GPU<br>零联网<br>一条命令</h2>
+       <code class="cmd" id="typing"></code>
+       <div class="badges"><span>103 个 unittest</span><span>离线看板</span><span>5 分钟讲稿</span><span>验收清单</span></div>
+       <div class="warn">看板标注「演示数据」：E1~E3 指标是教学示例值，不是真实精度；真实实验请用 <span class="mono">--mode full</span>。</div>
+     </div>
+   </div>`,
+  update:(el,p)=>{
+    reveal(el.querySelector(".kicker"),p,0,.1,18);
+    reveal(el.querySelector("h2"),p,.03,.2,26);
+    const cmd="python scripts/run_all.py --mode demo --open";
+    el.querySelector("#typing").textContent=cmd.slice(0,Math.floor(ease(band(p,.12,.42))*cmd.length));
+    stagger([...el.querySelectorAll(".badges span")],p,.28,.2,16);
+    reveal(el.querySelector(".warn"),p,.4,.58,16);
+    reveal(el.querySelector(".shot"),p,.05,.3,24);
+  }},
+
+ cta:{html:()=>`
+   <div class="scene sc-cta">
+     <span class="kicker">GITHUB · START HERE</span>
+     <h2 style="color:#fff">别只看它长什么样，<br>看你能用它做完什么</h2>
+     <div class="q">
+       <div><b>解决了什么</b>照片 → 检测框 → 投放建议，一条链路讲清楚</div>
+       <div><b>为什么值得试</b>真实实测 A/B + 零依赖复现 + 讲稿与清单</div>
+       <div><b>如何开始</b>下面这条命令，或点开仓库</div>
+     </div>
+     <div class="repo">${D.repo_short}</div>
+     <div class="cta-cmd">python scripts/run_all.py --mode demo --open</div>
+     <div class="cta-foot">Star · Fork · 提 Issue　|　45 秒看完，5 分钟复述，一条命令复现</div>
+   </div>`,
+  update:(el,p)=>{
+    reveal(el.querySelector(".kicker"),p,0,.1,18);
+    reveal(el.querySelector("h2"),p,.03,.2,26);
+    stagger([...el.querySelectorAll(".q div")],p,.1,.24,18);
+    reveal(el.querySelector(".repo"),p,.28,.45,22);
+    reveal(el.querySelector(".cta-cmd"),p,.4,.55,18);
+    reveal(el.querySelector(".cta-foot"),p,.45,.6,16);
+    /* everything settles before p=0.85 → CTA holds still >= 2s on a 4s scene */
+  }},
+
+ cards:{html:sc=>`
+   <div class="scene">
+     <span class="kicker">${sc.title?"项目能力":""}</span>
+     <h2>${sc.title||""}</h2>
+     <div class="cards">${(sc.cards||[]).map(c=>`<div class="card"><div class="t">${c[0]}</div><div class="d">${c[1]}</div></div>`).join("")}</div>
+   </div>`,
+  update:(el,p)=>{
+    reveal(el.querySelector(".kicker"),p,0,.14,18);
+    reveal(el.querySelector("h2"),p,.04,.28,24);
+    stagger([...el.querySelectorAll(".card")],p,.1,.3,24);
+  }},
+
+ split:{html:sc=>`
+   <div class="scene">
+     <span class="kicker">DEMO · 真实网页</span>
+     <h2>${sc.title||""}</h2>
+     <div class="split">
+       <div class="txt"><ul>${(sc.points||[]).map(q=>`<li><b>${q[0]}</b>${q[1]}</li>`).join("")}</ul></div>
+       <div class="pic"><img src="${A}${sc.image||"webapp.png"}"></div>
+     </div>
+   </div>`,
+  update:(el,p)=>{
+    reveal(el.querySelector(".kicker"),p,0,.14,18);
+    reveal(el.querySelector("h2"),p,.04,.28,24);
+    stagger([...el.querySelectorAll("li")],p,.1,.3,18);
+    reveal(el.querySelector(".pic"),p,.15,.38,24);
+  }}
+};
+
+/* ======================= Studio runtime ======================= */
+let version=Q.get("v")&&SCENES[Q.get("v")]?Q.get("v"):"45";
+let scenes=buildTimeline(version), t=0, playing=false, last=0, current=null, subOn=true;
+const stage=document.getElementById("stage"),host=document.getElementById("sceneHost");
+const subEl=document.getElementById("subtitle"),srcEl=document.getElementById("sourceTag");
+const bar=document.getElementById("progressBar"),clock=document.getElementById("clock");
+const playBtn=document.getElementById("playBtn"),tlTrack=document.getElementById("tlTrack");
+const sceneList=document.getElementById("sceneList"),tlInfo=document.getElementById("tlInfo");
+const duration=()=>scenes.reduce((a,s)=>a+s.dur,0);
+const sceneAt=x=>scenes.find(s=>x>=s.start&&x<s.start+s.dur)||scenes[scenes.length-1];
+
+function renderAt(x){
+  t=clamp(x,0,duration());
+  const sc=sceneAt(Math.min(t,duration()-.0001));
+  if(!current||current.sc!==sc){
+    const wrap=document.createElement("div");wrap.style.cssText="position:absolute;inset:0";
+    const r=R[sc.id]||R.cards;wrap.innerHTML=r.html(sc);
+    host.replaceChildren(wrap);current={sc,r,el:wrap.firstElementChild};
+  }
+  const p=clamp((t-sc.start)/sc.dur);
+  document.body.classList.toggle("dark-scene",sc.id==="hook"||sc.id==="cta");
+  current.r.update(current.el,p,sc);
+  subEl.textContent=sc.subtitle||"";srcEl.textContent="来源："+(sc.source||"README.md");
+  bar.style.width=(t/duration()*100)+"%";
+  if(!EXPORT){
+    clock.textContent=`${fmt(t)} / ${fmt(duration())}`;
+    document.getElementById("playhead").style.left=(t/duration()*100)+"%";
+    [...sceneList.children].forEach((b,i)=>b.classList.toggle("on",i===scenes.indexOf(sc)));
+    [...tlTrack.querySelectorAll(".tl-block")].forEach((b,i)=>b.classList.toggle("on",i===scenes.indexOf(sc)));
+  }
+}
+
+function buildUI(){
+  tlTrack.querySelectorAll(".tl-block").forEach(b=>b.remove());
+  scenes.forEach((s,i)=>{
+    const b=document.createElement("button");b.className="tl-block";b.style.flex=s.dur;
+    b.innerHTML=`<b>${i+1}. ${s.label}</b><span>${s.start.toFixed(0)}–${(s.start+s.dur).toFixed(0)}s</span>`;
+    b.onclick=()=>{pause();renderAt(s.start+.001);};tlTrack.appendChild(b);
+  });
+  sceneList.innerHTML=scenes.map((s,i)=>`<button class="scene-item" data-i="${i}"><i>${s.start.toFixed(0)}s</i>${i+1}. ${s.label}</button>`).join("");
+  [...sceneList.children].forEach(b=>b.onclick=()=>{pause();renderAt(scenes[+b.dataset.i].start+.001);});
+  tlInfo.textContent=`${scenes.length} 个场景 · ${duration()} 秒 · 30fps · 1920×1080`;
+  [...document.querySelectorAll("#versionGroup button")].forEach(b=>b.classList.toggle("on",b.dataset.v===version));
+}
+function fit(){
+  if(EXPORT)return;
+  const w=document.getElementById("stageWrap"),box=document.getElementById("stageBox");
+  const s=Math.min((w.clientWidth-48)/1920,(w.clientHeight-40)/1080);
+  stage.style.transform=`scale(${s})`;box.style.width=1920*s+"px";box.style.height=1080*s+"px";
+}
+function setVersion(v){if(!SCENES[v])return;version=v;scenes=buildTimeline(v);current=null;buildUI();renderAt(0);
+  try{history.replaceState(null,"",`?v=${v}`);}catch(_){/* file:// may block history API */}}
+function play(){if(playing)return;playing=true;last=performance.now();playBtn.textContent="❚❚ 暂停";requestAnimationFrame(loop);}
+function pause(){playing=false;playBtn.textContent="▶ 播放";}
+function loop(now){if(!playing)return;t+=(now-last)/1000;last=now;
+  if(t>=duration()){renderAt(duration()-.001);pause();return;}renderAt(t);requestAnimationFrame(loop);}
+
+playBtn.onclick=()=>playing?pause():play();
+document.getElementById("subBtn").onclick=e=>{subOn=!subOn;document.body.classList.toggle("no-sub",!subOn);e.target.textContent="字幕 "+(subOn?"开":"关");};
+document.getElementById("exportBtn").onclick=()=>{
+  const cmd=`node export/record.mjs --v ${version}`;
+  if(navigator.clipboard)navigator.clipboard.writeText(cmd).catch(()=>{});
+  alert(`导出命令已复制：\n\n${cmd}\n\n在本目录执行即可生成 export/yolo-starter-promo-${version}s.mp4。\n时间线任意跳转即为逐帧渲染，导出与 Studio 预览同源。`);
+};
+[...document.querySelectorAll("#versionGroup button")].forEach(b=>b.onclick=()=>{pause();setVersion(b.dataset.v);});
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space"){e.preventDefault();playing?pause():play();}
+  else if(e.code==="ArrowLeft"){pause();renderAt(t-1);}
+  else if(e.code==="ArrowRight"){pause();renderAt(t+1);}
+  else if(["Digit1","Digit2","Digit3"].includes(e.code)){pause();setVersion({Digit1:"15",Digit2:"45",Digit3:"90"}[e.code]);}
+});
+window.addEventListener("resize",fit);
+buildUI();fit();renderAt(0);
+
+/* Headless export hook: deterministic seek at any timestamp */
+window.__promo={
+  ready:true,
+  seek:renderAt,
+  setVersion,
+  get duration(){return duration();},
+  get version(){return version;},
+  get time(){return t;},
+  scenes:()=>scenes.map(s=>({id:s.id,start:s.start,dur:s.dur,label:s.label}))
+};
+if(EXPORT&&Q.get("v"))setVersion(Q.get("v"));
+</script>
+</body>
+</html>
