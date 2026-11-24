@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>校园垃圾分类投放识别看板 · demo</title>
+<style>
+:root{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--bg:#f8fafc;--card:#ffffff;
+--blue:#2563eb;--amber:#b45309;--amber-bg:#fffbeb;--green:#059669;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.65}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 24px 64px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
+border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:28px}
+h1{font-size:26px;margin:0 0 6px}h2{font-size:19px;margin:36px 0 14px;
+padding-left:10px;border-left:4px solid var(--blue)}
+p{margin:8px 0}.muted{color:var(--muted);font-size:13px}
+.badge{display:inline-block;padding:5px 12px;border-radius:999px;font-size:13px;font-weight:600}
+.badge.real{background:#ecfdf5;color:var(--green);border:1px solid #a7f3d0}
+.badge.demo{background:var(--amber-bg);color:var(--amber);border:1px solid #fde68a}
+.notice{background:var(--amber-bg);border:1px solid #fde68a;color:#78350f;
+border-radius:10px;padding:12px 16px;margin:16px 0;font-size:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card b{display:block;font-size:15px;margin-bottom:6px}
+.card span{font-size:13px;color:var(--muted)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:18px;margin:12px 0;overflow-x:auto}
+table.grid{border-collapse:collapse;width:100%;font-size:13px;min-width:880px}
+th,td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+th{background:#f1f5f9;font-weight:600;white-space:nowrap}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.strong{font-weight:700;color:var(--blue)}
+.id-cell{font-weight:600;white-space:nowrap}
+.tag{background:#dbeafe;color:#1d4ed8;border-radius:4px;padding:1px 6px;font-size:11px}
+ul{padding-left:22px}li{margin:6px 0}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;
+overflow-x:auto;font-size:12.5px;line-height:1.7}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+img{max-width:100%;border-radius:8px;border:1px solid var(--line)}
+footer{margin-top:44px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>校园垃圾分类投放识别 · YOLOv8 实验看板</h1>
+    <p class="muted">数据集：datasets/campus_trash/data.yaml ｜ 生成时间：2026-11-24 08:44:22 ｜ 模式：demo</p>
+  </div>
+  <span class="badge demo">演示数据</span>
+</header>
+
+<div class="notice"><b>数据说明：</b>演示数据（非真实推理结果）：指标来自 src/yolo_starter/samples.py 的内置示例值，检测框与投放建议用于展示「校园垃圾分类投放识别」流程，仅用于验证流水线、展示看板与答辩预演。请用 --mode full 配合 datasets/campus_trash/data.yaml 获取真实实验结果。</div>
+
+
+<h2>一、四项能力总览</h2>
+<div class="cards"><div class="card"><b>能看</b><span>本页即看板：垃圾检测框、投放建议、指标图、对比表与结论全部可视化，离线双击即可打开。</span></div><div class="card"><b>能跑</b><span>scripts/run_all.py 一键产出全部文件；scripts/check.py 自检；tests/ 为可重跑单测。</span></div><div class="card"><b>能对比</b><span>configs/experiments.json 定义受控实验，输出对比表、柱状图与自动结论。</span></div><div class="card"><b>能复述</b><span>README.md + docs/WALKTHROUGH.md 讲稿 + docs/CHECKLIST.md 验收清单。</span></div></div>
+
+<h2>二、实验设计（能对比）</h2>
+<p class="muted">同一数据集、同一指标口径，只改变模型 / 输入分辨率 / 置信度阈值，保证差异可归因。</p>
+<div class="panel"><table class='grid'><thead><tr><th>编号</th><th>实验</th><th>配置</th><th>待验证假设</th></tr></thead><tbody><tr><td class='id-cell'>E1</td><td>基准：yolov8n / 320 / conf=0.25</td><td>yolov8n.pt / 320 / conf 0.25</td><td>最小模型与低分辨率，速度最快，作为垃圾分类识别的基准线</td></tr><tr><td class='id-cell'>E2</td><td>提高输入分辨率：640</td><td>yolov8n.pt / 640 / conf 0.25</td><td>瓶罐、纸片等小目标在低分辨率下易漏检，提高分辨率后 mAP 应上升但耗时增加</td></tr><tr><td class='id-cell'>E3</td><td>提高置信度阈值：0.50</td><td>yolov8n.pt / 640 / conf 0.5</td><td>过滤低置信框可减少误投建议，Precision 上升、Recall 下降，体现 P-R 权衡</td></tr></tbody></table></div>
+
+<h2>三、指标对比表</h2>
+<div class="panel"><table class="grid"><thead><tr><th>实验</th><th>配置</th><th>mAP@0.50</th><th>mAP@0.50:0.95</th><th>Precision</th><th>Recall</th><th>耗时 ms/图</th><th>参数量 M</th><th>ΔmAP@0.50</th><th>ΔmAP@0.50:0.95</th><th>Δ耗时</th></tr></thead><tbody><tr><td class='id-cell'>E1 <span class="tag">基线</span><br><span class='muted'>基准：yolov8n / 320 / conf=0.25</span></td><td>yolov8n.pt / 320 / conf 0.25</td><td class='num'>0.512</td><td class='num strong'>0.331</td><td class='num'>0.641</td><td class='num'>0.472</td><td class='num'>18.4</td><td class='num'>3.2</td><td class='num'>+0.000</td><td class='num'>+0.000</td><td class='num'>+0.0</td></tr><tr><td class='id-cell'>E2<br><span class='muted'>提高输入分辨率：640</span></td><td>yolov8n.pt / 640 / conf 0.25</td><td class='num'>0.596</td><td class='num strong'>0.412</td><td class='num'>0.688</td><td class='num'>0.538</td><td class='num'>42.7</td><td class='num'>3.2</td><td class='num'>+0.084</td><td class='num'>+0.081</td><td class='num'>+24.3</td></tr><tr><td class='id-cell'>E3<br><span class='muted'>提高置信度阈值：0.50</span></td><td>yolov8n.pt / 640 / conf 0.5</td><td class='num'>0.571</td><td class='num strong'>0.399</td><td class='num'>0.762</td><td class='num'>0.446</td><td class='num'>42.7</td><td class='num'>3.2</td><td class='num'>+0.059</td><td class='num'>+0.068</td><td class='num'>+24.3</td></tr></tbody></table></div>
+<p class="muted">Δ 列以 E1 为基线；mAP 与 P/R 越高越好，单图耗时越低越好。</p>
+
+<h2>四、可视化（能看）</h2>
+<div class="charts"><div class="panel"><p class="muted">mAP@0.50:0.95（越高越好）</p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 260" width="100%" role="img" aria-label="mAP@0.50:0.95"><text x="52" y="26" font-size="15" font-weight="600" fill="#0f172a">mAP@0.50:0.95</text><line x1="52" y1="214" x2="622" y2="214" stroke="#cbd5e1"/><text x="8" y="52" font-size="11" fill="#64748b">0.47</text><text x="8" y="214" font-size="11" fill="#64748b">0</text><rect class="bar" x="111.0" y="96.6" width="72.0" height="117.4" rx="4" fill="#2563eb"/><text x="147.0" y="90.6" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">0.331</text><text x="147.0" y="234.0" text-anchor="middle" font-size="12" fill="#475569">E1</text><rect class="bar" x="301.0" y="67.9" width="72.0" height="146.1" rx="4" fill="#2563eb"/><text x="337.0" y="61.9" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">0.412</text><text x="337.0" y="234.0" text-anchor="middle" font-size="12" fill="#475569">E2</text><rect class="bar" x="491.0" y="72.5" width="72.0" height="141.5" rx="4" fill="#2563eb"/><text x="527.0" y="66.5" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">0.399</text><text x="527.0" y="234.0" text-anchor="middle" font-size="12" fill="#475569">E3</text></svg></div><div class="panel"><p class="muted">mAP@0.50（越高越好）</p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 260" width="100%" role="img" aria-label="mAP@0.50"><text x="52" y="26" font-size="15" font-weight="600" fill="#0f172a">mAP@0.50</text><line x1="52" y1="214" x2="622" y2="214" stroke="#cbd5e1"/><text x="8" y="52" font-size="11" fill="#64748b">0.69</text><text x="8" y="214" font-size="11" fill="#64748b">0</text><rect class="bar" x="111.0" y="88.5" width="72.0" height="125.5" rx="4" fill="#7c3aed"/><text x="147.0" y="82.5" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">0.512</text><text x="147.0" y="234.0" text-anchor="middle" font-size="12" fill="#475569">E1</text><rect class="bar" x="301.0" y="67.9" width="72.0" height="146.1" rx="4" fill="#7c3aed"/><text x="337.0" y="61.9" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">0.596</text><text x="337.0" y="234.0" text-anchor="middle" font-size="12" fill="#475569">E2</text><rect class="bar" x="491.0" y="74.0" width="72.0" height="140.0" rx="4" fill="#7c3aed"/><text x="527.0" y="68.0" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">0.571</text><text x="527.0" y="234.0" text-anchor="middle" font-size="12" fill="#475569">E3</text></svg></div><div class="panel"><p class="muted">单图推理耗时 ms（越低越好）</p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 260" width="100%" role="img" aria-label="单图推理耗时"><text x="52" y="26" font-size="15" font-weight="600" fill="#0f172a">单图推理耗时</text><line x1="52" y1="214" x2="622" y2="214" stroke="#cbd5e1"/><text x="8" y="52" font-size="11" fill="#64748b">49.10</text><text x="8" y="214" font-size="11" fill="#64748b">0</text><rect class="bar" x="111.0" y="151.0" width="72.0" height="63.0" rx="4" fill="#dc2626"/><text x="147.0" y="145.0" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">18.400</text><text x="147.0" y="234.0" text-anchor="middle" font-size="12" fill="#475569">E1</text><text x="147.0" y="250.0" text-anchor="middle" font-size="10" fill="#94a3b8">ms</text><rect class="bar" x="301.0" y="67.9" width="72.0" height="146.1" rx="4" fill="#dc2626"/><text x="337.0" y="61.9" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">42.700</text><text x="337.0" y="234.0" text-anchor="middle" font-size="12" fill="#475569">E2</text><text x="337.0" y="250.0" text-anchor="middle" font-size="10" fill="#94a3b8">ms</text><rect class="bar" x="491.0" y="67.9" width="72.0" height="146.1" rx="4" fill="#dc2626"/><text x="527.0" y="61.9" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">42.700</text><text x="527.0" y="234.0" text-anchor="middle" font-size="12" fill="#475569">E3</text><text x="527.0" y="250.0" text-anchor="middle" font-size="10" fill="#94a3b8">ms</text></svg></div></div>
+<h2>五、检测效果</h2>
+<div class="panel"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="100%" role="img" aria-label="目标检测效果图"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e0f2fe"/><stop offset="100%" stop-color="#f1f5f9"/></linearGradient></defs><rect width="640" height="360" fill="url(#bg)"/><rect y="259" width="640" height="100" fill="#cbd5e1" opacity="0.6"/><text x="16" y="26" font-size="13" fill="#475569">检测框 = 模型输出；框上文字 = 类别与置信度</text><rect x="51.2" y="72.0" width="115.2" height="201.6" fill="none" stroke="#2563eb" stroke-width="3" rx="3"/><rect x="51.2" y="52.0" width="108.0" height="20" fill="#2563eb" rx="3"/><text x="57.2" y="67.0" font-size="12" fill="#ffffff">plastic 0.91</text><rect x="204.8" y="108.0" width="140.8" height="144.0" fill="none" stroke="#059669" stroke-width="3" rx="3"/><rect x="204.8" y="88.0" width="92.0" height="20" fill="#059669" rx="3"/><text x="210.8" y="103.0" font-size="12" fill="#ffffff">paper 0.83</text><rect x="384.0" y="57.6" width="128.0" height="223.2" fill="none" stroke="#7c3aed" stroke-width="3" rx="3"/><rect x="384.0" y="37.6" width="92.0" height="20" fill="#7c3aed" rx="3"/><text x="390.0" y="52.6" font-size="12" fill="#ffffff">glass 0.74</text><rect x="179.2" y="234.0" width="128.0" height="90.0" fill="none" stroke="#b45309" stroke-width="3" rx="3"/><rect x="179.2" y="214.0" width="124.0" height="20" fill="#b45309" rx="3"/><text x="185.2" y="229.0" font-size="12" fill="#ffffff">cardboard 0.71</text><rect x="332.8" y="223.2" width="89.6" height="100.8" fill="none" stroke="#0891b2" stroke-width="3" rx="3"/><rect x="332.8" y="203.2" width="89.6" height="20" fill="#0891b2" rx="3"/><text x="338.8" y="218.2" font-size="12" fill="#ffffff">metal 0.66</text><rect x="499.2" y="198.0" width="102.4" height="108.0" fill="none" stroke="#dc2626" stroke-width="3" rx="3"/><rect x="499.2" y="178.0" width="92.0" height="20" fill="#dc2626" rx="3"/><text x="505.2" y="193.0" font-size="12" fill="#ffffff">trash 0.68</text></svg></div>
+<h3>分类投放建议</h3><div class="panel"><table class="grid"><thead><tr><th>识别类别</th><th>数量</th><th>投放建议</th></tr></thead><tbody><tr><td class='id-cell'>cardboard</td><td class='num'>1</td><td>可回收物：拆开压平后投入蓝色可回收桶。</td></tr><tr><td class='id-cell'>glass</td><td class='num'>1</td><td>可回收物：轻放投入玻璃回收箱，避免破碎。</td></tr><tr><td class='id-cell'>metal</td><td class='num'>1</td><td>可回收物：清空内容物后投入蓝色可回收桶。</td></tr><tr><td class='id-cell'>paper</td><td class='num'>1</td><td>可回收物：保持干燥整洁，投入蓝色可回收桶。</td></tr><tr><td class='id-cell'>plastic</td><td class='num'>1</td><td>可回收物：清空残留并简单冲洗，投入蓝色可回收桶。</td></tr><tr><td class='id-cell'>trash</td><td class='num'>1</td><td>其他垃圾：无法回收时投入灰色其他垃圾桶。</td></tr></tbody></table><p><b>共检测 6 件物品，其中可回收物 5 件，其余 1 件需按有害/厨余/其他垃圾分别投放。</b></p></div>
+
+<h2>六、自动结论</h2>
+<div class="panel"><ul><li>E2（提高输入分辨率：640）的 mAP@0.50:0.95 最高，为 0.412；mAP@0.50 为 0.596。</li><li>E1 的单图推理耗时最低（18.4 ms/图），是速度最优配置。</li><li>精度最优的 E2 比最快的 E1 多耗时 24.3 ms/图（+132%），体现精度-速度权衡。</li><li>相对基线 E1，E2 的 mAP@0.50:0.95 变化 +0.081，mAP@0.50 变化 +0.084。</li><li>提高 conf 阈值的一组 Precision 均值 0.762 高于低阈值组 0.664，但 Recall 均值 0.446 低于 0.505，符合 P-R 权衡预期。</li></ul></div>
+
+<h2>七、环境与复现命令（能跑）</h2>
+<div class="panel"><table class="grid"><thead><tr><th>项</th><th>值</th></tr></thead>
+<tbody><tr><td>python</td><td>3.13.14</td></tr><tr><td>platform</td><td>Windows-11-10.0.26100-SP0</td></tr><tr><td>ultralytics_available</td><td>True</td></tr><tr><td>torch_available</td><td>True</td></tr><tr><td>device</td><td>cpu</td></tr><tr><td>ultralytics_version</td><td>8.4.216</td></tr><tr><td>torch_version</td><td>2.15.0+cpu</td></tr></tbody></table></div>
+<pre># 1) 环境自检
+python scripts/check.py
+# 2) 单元测试
+python -m unittest discover -s tests -v
+# 3) 零依赖演示（无需 GPU / 无需联网）
+python scripts/run_all.py --mode demo --open
+# 4) 真实 YOLOv8 实验（准备 datasets/campus_trash 数据集后）
+python scripts/run_all.py --mode full --dataset datasets/campus_trash/data.yaml --epochs 20
+# 5) 本地预览看板
+python -m http.server 8000 --directory reports</pre>
+
+<h2>八、复述提纲（能复述）</h2>
+<div class="panel"><ul>
+<li>项目对象是校园垃圾：塑料瓶、纸张、纸板、玻璃、金属、其他垃圾共 6 类，检测后按规则给出投放建议。</li>
+<li>YOLO 是单阶段检测器，一次前向传播同时预测框与类别；本项目用 Ultralytics YOLOv8。</li>
+<li>流程：加载实验矩阵 → 逐组验证 / 推理 → 指标归一化 → 生成对比表与图 → 输出看板与结论。</li>
+<li>评价：mAP@0.50、mAP@0.50:0.95、Precision、Recall、单图耗时；结论由代码从数据自动推导。</li>
+<li>取舍：分辨率与模型规模换精度、耗时间上升；提高 conf 换 Precision、Recall 下降。</li>
+<li>复现：完整讲稿见 docs/WALKTHROUGH.md，逐项验收见 docs/CHECKLIST.md。</li>
+</ul></div>
+
+<footer>数据来源：演示数据（非真实推理结果）：指标来自 src/yolo_starter/samples.py 的内置示例值，检测框与投放建议用于展示「校园垃圾分类投放识别」流程，仅用于验证流水线、展示看板与答辩预演。请用 --mode full 配合 datasets/campus_trash/data.yaml 获取真实实验结果。<br>本页由 src/yolo_starter/report.py 生成，无外部资源依赖，可离线打开。</footer>
+</div>
+</body>
+</html>
