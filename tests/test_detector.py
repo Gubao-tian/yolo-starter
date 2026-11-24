@@ -140,5 +140,57 @@ class TestDenseBooks(unittest.TestCase):
         self.assertTrue(all(d["zh"] == "书本" for d in out))
 
 
+class TestFusedWaste(unittest.TestCase):
+    """垃圾分类双模型融合：COCO 框优先，世界模式只补 COCO 认不出的。"""
+
+    def test_merge_keeps_non_overlapping_world_boxes(self):
+        fn = getattr(detector, "merge_fused_detections", None)
+        self.assertIsNotNone(fn)
+        coco = [{"label": "bottle", "score": 0.9, "box": [0, 0, 10, 10]}]
+        world = [{"label": "lamp", "score": 0.8, "box": [50, 50, 60, 60]}]
+        merged = fn(coco, world)
+        self.assertEqual(len(merged), 2)
+        sources = {d["source"] for d in merged}
+        self.assertEqual(sources, {"coco", "world"})
+
+    def test_merge_drops_world_box_overlapping_coco(self):
+        fn = getattr(detector, "merge_fused_detections", None)
+        coco = [{"label": "cup", "score": 0.9, "box": [0, 0, 10, 10]}]
+        world = [{"label": "bottle", "score": 0.95, "box": [1, 1, 9, 9]}]
+        merged = fn(coco, world, iou_threshold=0.5)
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["label"], "cup")
+        self.assertEqual(merged[0]["source"], "coco")
+
+    def test_merge_keeps_world_box_below_iou_threshold(self):
+        fn = getattr(detector, "merge_fused_detections", None)
+        coco = [{"label": "cup", "score": 0.9, "box": [0, 0, 10, 10]}]
+        world = [{"label": "lamp", "score": 0.8, "box": [8, 8, 40, 40]}]  # IoU 很低
+        merged = fn(coco, world, iou_threshold=0.5)
+        self.assertEqual(len(merged), 2)
+
+    def test_merge_sorts_by_score_desc(self):
+        fn = getattr(detector, "merge_fused_detections", None)
+        coco = [{"label": "cup", "score": 0.5, "box": [0, 0, 5, 5]}]
+        world = [{"label": "lamp", "score": 0.9, "box": [50, 50, 60, 60]}]
+        merged = fn(coco, world)
+        self.assertEqual([d["score"] for d in merged], [0.9, 0.5])
+
+    def test_predict_fused_combines_and_counts(self):
+        from unittest.mock import patch
+        coco = [{"label": "bottle", "zh": "瓶子", "score": 0.9, "box": [0, 0, 10, 10]}]
+        world = [{"label": "lamp", "zh": "台灯", "score": 0.8, "box": [50, 50, 60, 60]}]
+        with patch.object(detector, "predict", return_value={"detections": coco}) as p, \
+             patch.object(detector, "predict_world",
+                          return_value={"detections": world}) as w:
+            out = detector.predict_fused("fake.jpg", conf=0.25, imgsz=960)
+        self.assertEqual(out["mode"], "waste")
+        self.assertEqual(out["count"], 2)
+        self.assertEqual(out["coco_count"], 1)
+        self.assertEqual(out["world_count"], 1)
+        self.assertEqual(p.call_args.kwargs.get("imgsz"), 960)
+        self.assertTrue(out["detections"][0]["score"] >= out["detections"][1]["score"])
+
+
 if __name__ == "__main__":
     unittest.main()

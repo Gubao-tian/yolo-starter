@@ -37,6 +37,16 @@ class TestVocab(unittest.TestCase):
             self.assertEqual(ov.zh_name(word), zh, word)
             self.assertEqual(ov.group_of(word), "家居", word)
 
+    def test_range_hood_and_bear_present(self):
+        # 厨房图的抽油烟机被误检成"空调"、棕熊图被误检成"狗"：
+        # 词表补充正确归属，让开放词汇模型有更近的正确类别可选
+        self.assertIn("range hood", ov.WORDS)
+        self.assertEqual(ov.zh_name("range hood"), "抽油烟机")
+        self.assertEqual(ov.group_of("range hood"), "家居")
+        self.assertIn("bear", ov.WORDS)
+        self.assertEqual(ov.zh_name("bear"), "熊")
+        self.assertEqual(ov.group_of("bear"), "人物/动物")
+
     def test_every_word_has_chinese_name(self):
         for w in ov.WORDS:
             self.assertIn(w, ov.ZH_NAMES, w)

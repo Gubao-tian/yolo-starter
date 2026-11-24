@@ -80,7 +80,7 @@
       <button type="button" class="mode-btn" id="modeDense" data-mode="dense">密集书本</button>
       <button type="button" class="mode-btn" id="modeNuts" data-mode="nuts">坚果识别</button>
     </div>
-    <div class="mode-tip" id="modeTip">垃圾分类：框出物品并给出投放建议，速度快。</div>
+    <div class="mode-tip" id="modeTip">垃圾分类：COCO 与开放词汇双模型融合，识别更全；首次使用会加载两个模型，稍慢。</div>
     <img class="preview" id="preview" alt="预览"/>
     <div class="row">
       <button id="btn" disabled>开始识别</button>
@@ -153,7 +153,7 @@ document.querySelectorAll('.mode-btn').forEach(b => {
         ? '密集书本：切片推理 + 高分辨率，专攻书架上密集排列的小目标；已自动把阈值设为 0.15，可自行调高以提升精度。'
         : mode === 'nuts'
           ? '坚果识别：用人工标注微调的模型找坚果，自动过滤误检的大框。适合饭盒、坚果盘中带壳坚果的识别。'
-          : '垃圾分类：框出物品并给出投放建议，速度快。';
+          : '垃圾分类：COCO 与开放词汇双模型融合，识别更全（首次约 5 秒，之后稍慢于单模型）。想多框出小物品可把阈值调到 0.15。';
   });
 });
 

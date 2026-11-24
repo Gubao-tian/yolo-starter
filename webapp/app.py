@@ -72,15 +72,22 @@ def _draw_annotated_world(image_path: str, conf: float, words: list[str] | None 
 
 
 def _draw_annotated(image_path: str, conf: float):
-    """用模型推理并画出检测框，返回 (带框图片的 base64 data URI, detections)。"""
+    """垃圾分类模式：双模型融合推理并画框。
+
+    COCO 模型（imgsz=960）负责常规物品；YOLO-World 补充 COCO 之外的
+    家居物品。世界权重缺失时自动退回单模型。返回 (data URI, detections)。
+    """
     from PIL import Image
 
-    model = detector.load_model(WEIGHTS, DEVICE)
-    results = model.predict(source=image_path, conf=conf, device=DEVICE, verbose=False)
-    detections: list[dict] = []
-    for r in results:
-        detections.extend(detector.predictions_from_result(r))
-    detections.sort(key=lambda d: -d["score"])
+    if Path(WORLD_WEIGHTS).exists():
+        result = detector.predict_fused(
+            image_path, weights_path=WEIGHTS, world_weights=WORLD_WEIGHTS,
+            conf=conf, device=DEVICE, imgsz=960)
+        detections = result["detections"]
+    else:
+        # 兜底：没有世界权重时退回单模型（高分辨率）
+        result = detector.predict(image_path, WEIGHTS, conf, DEVICE, imgsz=960)
+        detections = result["detections"]
 
     source = Image.open(image_path).convert("RGB")
     annotated = detector.draw_detections(source, detections)

@@ -34,7 +34,8 @@ def load_world_model(weights_path: str = DEFAULT_WORLD_WEIGHTS,
 def predict_world(image_path: str | Path,
                   words: list[str] | None = None,
                   weights_path: str = DEFAULT_WORLD_WEIGHTS,
-                  conf: float = 0.25, device: str = "cpu") -> dict:
+                  conf: float = 0.25, device: str = "cpu",
+                  imgsz: int = 640) -> dict:
     """用 YOLO-World 按给定词表检测图片中的所有对象。
 
     返回 {detections, count, mode, words}。模型进程内缓存，词表每次设置
@@ -43,7 +44,8 @@ def predict_world(image_path: str | Path,
     word_list = list(words) if words else list(objects_vocab.WORDS)
     model = load_world_model(str(weights_path), device)
     model.set_classes(word_list)
-    results = model.predict(source=str(image_path), conf=conf, device=device, verbose=False)
+    results = model.predict(source=str(image_path), conf=conf, imgsz=imgsz,
+                            device=device, verbose=False)
     detections: list[dict] = []
     for r in results:
         detections.extend(predictions_from_result(r))
@@ -259,12 +261,96 @@ def detect_dense_books(model, image_path: str | Path, conf: float = 0.15,
 
 
 def predict(image_path: str | Path, weights_path: str = DEFAULT_WEIGHTS,
-            conf: float = 0.25, device: str = "cpu") -> dict:
+            conf: float = 0.25, device: str = "cpu", imgsz: int = 640) -> dict:
     """对一张图片推理，返回结构化结果（不含画框后的图片）。"""
     model = load_model(str(weights_path), device)
-    results = model.predict(source=str(image_path), conf=conf, device=device, verbose=False)
+    results = model.predict(source=str(image_path), conf=conf, imgsz=imgsz,
+                            device=device, verbose=False)
     detections: list[dict] = []
     for r in results:
         detections.extend(predictions_from_result(r))
     detections.sort(key=lambda d: -d["score"])
     return {"detections": detections, "count": len(detections)}
+
+
+def _box_iou(a: list[float], b: list[float]) -> float:
+    """两个 xyxy 框的交并比；非法框返回 0。"""
+    if len(a) != 4 or len(b) != 4:
+        return 0.0
+    ix1, iy1 = max(a[0], b[0]), max(a[1], b[1])
+    ix2, iy2 = min(a[2], b[2]), min(a[3], b[3])
+    iw, ih = max(0.0, ix2 - ix1), max(0.0, iy2 - iy1)
+    inter = iw * ih
+    if inter <= 0:
+        return 0.0
+    area_a = max(0.0, a[2] - a[0]) * max(0.0, a[3] - a[1])
+    area_b = max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1])
+    denom = area_a + area_b - inter
+    return inter / denom if denom > 0 else 0.0
+
+
+def merge_fused_detections(coco_dets: list[dict], world_dets: list[dict],
+                           iou_threshold: float = 0.5) -> list[dict]:
+    """合并双模型检测结果：COCO 框优先，世界模式只补 COCO 认不出的。
+
+    世界模式框若与任一 COCO 框重叠超过 iou_threshold，视为同一对象被
+    丢弃（COCO 类别有更精确的投放规则）；其余保留。每条结果附加
+    source 字段（"coco" / "world"），按置信度降序排列。
+    """
+    merged: list[dict] = []
+    coco_boxes = []
+    for det in coco_dets:
+        item = dict(det)
+        item["source"] = "coco"
+        merged.append(item)
+        box = det.get("box") or []
+        if len(box) == 4:
+            coco_boxes.append([float(v) for v in box])
+    for det in world_dets:
+        box = det.get("box") or []
+        if len(box) != 4:
+            continue
+        try:
+            fbox = [float(v) for v in box]
+        except (TypeError, ValueError):
+            continue
+        if any(_box_iou(fbox, cb) >= iou_threshold for cb in coco_boxes):
+            continue
+        item = dict(det)
+        item["source"] = "world"
+        merged.append(item)
+
+    def _score(d: dict) -> float:
+        try:
+            return float(d.get("score", 0) or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    merged.sort(key=_score, reverse=True)
+    return merged
+
+
+def predict_fused(image_path: str | Path,
+                  weights_path: str = DEFAULT_WEIGHTS,
+                  world_weights: str = DEFAULT_WORLD_WEIGHTS,
+                  conf: float = 0.25, device: str = "cpu",
+                  imgsz: int = 960, world_iou: float = 0.5) -> dict:
+    """垃圾分类双模型融合：COCO 模型（高分辨率）+ YOLO-World 补漏。
+
+    - COCO 模型负责常规物品，imgsz 默认 960 提高小目标召回；
+    - YOLO-World 按 119 类词表补充 COCO 之外的家居物品（台灯、镜子、
+      篮子、柜子……），这些类别同样有投放规则；
+    - 两路结果按 IoU 去重合并，COCO 框优先。
+    """
+    coco = predict(image_path, weights_path, conf, device, imgsz=imgsz)
+    world = predict_world(image_path, words=None, weights_path=world_weights,
+                          conf=conf, device=device, imgsz=imgsz)
+    detections = merge_fused_detections(coco["detections"],
+                                        world["detections"], world_iou)
+    return {
+        "detections": detections,
+        "count": len(detections),
+        "mode": "waste",
+        "coco_count": len(coco["detections"]),
+        "world_count": len(detections) - len(coco["detections"]),
+    }

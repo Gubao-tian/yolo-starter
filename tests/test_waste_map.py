@@ -59,5 +59,67 @@ class TestWasteMap(unittest.TestCase):
         self.assertIn("可回收", s["headline"])
 
 
+class TestExtendedHouseholdRules(unittest.TestCase):
+    """双模型融合后，开放词汇检出的家居物品也要有投放规则。"""
+
+    def test_lamp_is_recyclable(self):
+        info = waste_map.waste_advice("lamp")
+        self.assertTrue(info["is_waste"])
+        self.assertTrue(info["known"])
+        self.assertEqual(info["type"], "可回收物")
+
+    def test_mirror_is_recyclable_not_non_waste(self):
+        info = waste_map.waste_advice("mirror")
+        self.assertTrue(info["is_waste"])
+        self.assertEqual(info["type"], "可回收物")
+
+    def test_vase_is_other_waste_not_non_waste(self):
+        info = waste_map.waste_advice("vase")
+        self.assertTrue(info["is_waste"])
+        self.assertEqual(info["type"], "其他垃圾")
+
+    def test_clothes_go_to_textile_recycling(self):
+        info = waste_map.waste_advice("clothes")
+        self.assertTrue(info["is_waste"])
+        self.assertEqual(info["type"], "可回收物")
+
+    def test_basket_is_recyclable(self):
+        info = waste_map.waste_advice("basket")
+        self.assertTrue(info["is_waste"])
+        self.assertTrue(info["known"])
+
+    def test_large_furniture_needs_bulk_pickup(self):
+        for label in ("cabinet", "dresser", "bookshelf", "nightstand", "desk"):
+            info = waste_map.waste_advice(label)
+            self.assertTrue(info["is_waste"], label)
+            self.assertEqual(info["type"], "其他垃圾", label)
+            self.assertIn("大件", info["advice"], label)
+
+    def test_curtain_and_blanket_are_other_waste(self):
+        for label in ("curtain", "blanket", "carpet", "frame", "pillow",
+                      "teddy bear", "shoes"):
+            info = waste_map.waste_advice(label)
+            self.assertTrue(info["is_waste"], label)
+            self.assertTrue(info["known"], label)
+
+    def test_world_only_electronics_have_rules(self):
+        for label, kind in (("remote", "有害垃圾"), ("washing machine", "有害垃圾"),
+                            ("air conditioner", "有害垃圾"), ("camera", "可回收物"),
+                            ("headphones", "可回收物"), ("plastic bag", "其他垃圾"),
+                            ("jar", "可回收物"), ("straw", "其他垃圾")):
+            info = waste_map.waste_advice(label)
+            self.assertTrue(info["is_waste"], label)
+            self.assertTrue(info["known"], label)
+            self.assertEqual(info["type"], kind, label)
+
+    def test_extended_food_is_kitchen_waste(self):
+        for label in ("egg", "tomato", "bread", "rice", "cheese", "cookie"):
+            info = waste_map.waste_advice(label)
+            self.assertEqual(info["type"], "厨余垃圾", label)
+
+    def test_person_still_not_waste(self):
+        self.assertFalse(waste_map.waste_advice("person")["is_waste"])
+
+
 if __name__ == "__main__":
     unittest.main()

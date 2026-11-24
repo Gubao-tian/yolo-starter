@@ -17,7 +17,7 @@ MULTIWORD = {
     "cell phone", "hot dog", "wine glass", "light bulb", "teddy bear",
     "traffic light", "fire hydrant", "sports ball", "potted plant",
     "dining table", "washing machine", "air conditioner", "trash can",
-    "stop sign", "plastic bag",
+    "stop sign", "plastic bag", "range hood",
 }
 
 # 按分组组织，键仅用于文档归类；WORDS 为扁平去重后的完整清单
@@ -46,14 +46,14 @@ GROUPS: dict[str, list[str]] = {
         "umbrella", "backpack", "handbag", "key", "mirror", "lamp", "pillow",
         "teddy bear", "potted plant",
         "basket", "curtain", "cabinet", "dresser", "bookshelf", "clothes",
-        "carpet", "frame", "shoes", "blanket", "nightstand",
+        "carpet", "frame", "shoes", "blanket", "nightstand", "range hood",
     ],
     "交通/户外": [
         "car", "bicycle", "bus", "truck", "motorcycle", "train", "airplane",
         "traffic light", "stop sign", "fire hydrant", "bench", "sports ball",
     ],
     "人物/动物": [
-        "person", "dog", "cat", "bird", "horse", "cow", "sheep",
+        "person", "dog", "cat", "bird", "horse", "cow", "sheep", "bear",
     ],
 }
 
@@ -99,6 +99,7 @@ ZH_NAMES: dict[str, str] = {
     "basket": "篮子", "curtain": "窗帘", "cabinet": "柜子", "dresser": "抽屉柜",
     "bookshelf": "书架", "clothes": "衣服", "carpet": "地毯", "frame": "相框",
     "shoes": "鞋", "blanket": "毯子", "nightstand": "床头柜",
+    "range hood": "抽油烟机",
     "car": "汽车", "bicycle": "自行车", "bus": "公交车", "truck": "卡车",
     "motorcycle": "摩托车", "train": "火车", "airplane": "飞机",
     "traffic light": "红绿灯", "stop sign": "停止标志", "fire hydrant": "消防栓",

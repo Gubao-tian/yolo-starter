@@ -59,17 +59,82 @@ _COCO_WASTE: dict[str, tuple[str, str, str]] = {
     "knife": ("其他垃圾", "灰色", "一次性餐具：投入灰色其他垃圾桶。"),
 }
 
-# 明确不是垃圾的对象（人、动物、交通工具、家具以外的场景物等）：不产生投放建议
+# 明确不是垃圾的对象（人、动物、交通工具、场景物等）：不产生投放建议
 _NON_WASTE = frozenset({
     "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
     "dog", "cat", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe",
     "bird", "fish", "rabbit", "monkey", "pigeon", "chicken", "duck",
-    "traffic light", "stop sign", "fire hydrant", "bench", "potted plant", "vase",
-    "clock", "umbrella", "handbag", "backpack", "tie", "suitcase", "frisbee", "skis",
+    "traffic light", "stop sign", "fire hydrant", "bench", "potted plant",
+    "umbrella", "handbag", "backpack", "tie", "suitcase", "frisbee", "skis",
     "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard",
     "surfboard", "tennis racket", "bottle cap", "hair drier", "scissors",
-    "door", "window", "stairs", "mirror",
+    "door", "window", "stairs",
 })
+
+# 开放词汇补充类别（YOLO-World 独有词表）-> (大类, 桶色, 建议)
+# 双模型融合模式下，这些类别会由 YOLO-World 检出并套用以下规则。
+_EXTENDED_WASTE: dict[str, tuple[str, str, str]] = {
+    # 家居 -> 可回收物
+    "lamp": ("可回收物", "蓝色", "台灯：拆除灯泡（灯泡投有害垃圾）后，灯体属可回收物，投入蓝色可回收桶或废品回收点。"),
+    "mirror": ("可回收物", "蓝色", "镜子：玻璃制品，轻放投入玻璃/可回收回收点。"),
+    "basket": ("可回收物", "蓝色", "篮子：塑料/金属篮倒空清洗后投入蓝色可回收桶。"),
+    "clothes": ("可回收物", "蓝色", "旧衣物：清洗晾干后投入衣物回收箱。"),
+    "trash can": ("可回收物", "蓝色", "废旧垃圾桶：倒空清洗后投入蓝色可回收桶。"),
+    # 家居 -> 其他垃圾
+    "curtain": ("其他垃圾", "灰色", "窗帘：大件布艺，可洗净后投放衣物回收箱，或按其他垃圾处理。"),
+    "blanket": ("其他垃圾", "灰色", "毯子/床上用品：洗净后可投衣物回收箱，或投入灰色其他垃圾桶。"),
+    "carpet": ("其他垃圾", "灰色", "地毯：大件布艺，按其他垃圾或预约大件清运处理。"),
+    "frame": ("其他垃圾", "灰色", "相框：拆除玻璃后按其他垃圾处理。"),
+    "pillow": ("其他垃圾", "灰色", "枕头：投入灰色其他垃圾桶或衣物回收箱。"),
+    "teddy bear": ("其他垃圾", "灰色", "毛绒玩具：洗净后可投衣物回收箱，或投入灰色其他垃圾桶。"),
+    "shoes": ("其他垃圾", "灰色", "旧鞋：较完整的可投衣物回收箱，破损的投入灰色其他垃圾桶。"),
+    "vase": ("其他垃圾", "灰色", "花瓶：陶瓷制品难回收，投入灰色其他垃圾桶。"),
+    "clock": ("其他垃圾", "灰色", "时钟：先取出电池投有害垃圾，钟体投入灰色其他垃圾桶。"),
+    # 大件家具 -> 预约清运
+    "cabinet": ("其他垃圾", "灰色", "大件家具：预约大件垃圾清运，勿投入普通桶。"),
+    "dresser": ("其他垃圾", "灰色", "大件家具：预约大件垃圾清运，勿投入普通桶。"),
+    "bookshelf": ("其他垃圾", "灰色", "大件家具：预约大件垃圾清运，勿投入普通桶。"),
+    "nightstand": ("其他垃圾", "灰色", "大件家具：预约大件垃圾清运，勿投入普通桶。"),
+    "desk": ("其他垃圾", "灰色", "大件家具：预约大件垃圾清运，勿投入普通桶。"),
+    # 电子补充
+    "remote": ("有害垃圾", "红色", "遥控器：含电池，取出电池（电池投有害垃圾）后投电子回收点。"),
+    "washing machine": ("有害垃圾", "红色", "废旧电器：投放至电子废弃物回收点。"),
+    "air conditioner": ("有害垃圾", "红色", "废旧电器：投放至电子废弃物回收点。"),
+    "camera": ("可回收物", "蓝色", "相机：属电子废弃物，投放至电子回收点。"),
+    "headphones": ("可回收物", "蓝色", "耳机：属电子废弃物，投放至电子回收点。"),
+    # 日用品
+    "plastic bag": ("其他垃圾", "灰色", "塑料袋：难降解，投入灰色其他垃圾桶。"),
+    "straw": ("其他垃圾", "灰色", "吸管：一次性塑料，投入灰色其他垃圾桶。"),
+    "soap": ("其他垃圾", "灰色", "皂类：用剩的肥皂投入灰色其他垃圾桶。"),
+    "jar": ("可回收物", "蓝色", "玻璃罐：洗净倒空后投入玻璃回收点。"),
+    "detergent": ("可回收物", "蓝色", "洗涤剂瓶：倒空冲洗后投入蓝色可回收桶，残留液体按说明处理。"),
+    # 食物补充 -> 厨余垃圾
+    "egg": ("厨余垃圾", "绿色", "蛋壳：投入绿色厨余桶。"),
+    "tomato": ("厨余垃圾", "绿色", "果皮菜叶：投入绿色厨余桶。"),
+    "potato": ("厨余垃圾", "绿色", "果皮菜叶：投入绿色厨余桶。"),
+    "cucumber": ("厨余垃圾", "绿色", "果皮菜叶：投入绿色厨余桶。"),
+    "grape": ("厨余垃圾", "绿色", "果皮：投入绿色厨余桶。"),
+    "strawberry": ("厨余垃圾", "绿色", "果皮：投入绿色厨余桶。"),
+    "watermelon": ("厨余垃圾", "绿色", "瓜皮：投入绿色厨余桶。"),
+    "lemon": ("厨余垃圾", "绿色", "果皮：投入绿色厨余桶。"),
+    "peach": ("厨余垃圾", "绿色", "果核果皮：投入绿色厨余桶。"),
+    "pear": ("厨余垃圾", "绿色", "果核果皮：投入绿色厨余桶。"),
+    "corn": ("厨余垃圾", "绿色", "玉米芯：投入绿色厨余桶。"),
+    "mushroom": ("厨余垃圾", "绿色", "剩菜：投入绿色厨余桶。"),
+    "bread": ("厨余垃圾", "绿色", "剩面包：投入绿色厨余桶。"),
+    "butter": ("厨余垃圾", "绿色", "剩余食品：投入绿色厨余桶。"),
+    "cheese": ("厨余垃圾", "绿色", "剩余食品：投入绿色厨余桶。"),
+    "pineapple": ("厨余垃圾", "绿色", "果皮：投入绿色厨余桶。"),
+    "nuts": ("其他垃圾", "灰色", "坚果壳：硬壳难腐烂，投入灰色其他垃圾桶（果仁属厨余）。"),
+    "meatball": ("厨余垃圾", "绿色", "剩菜：投入绿色厨余桶。"),
+    "rice": ("厨余垃圾", "绿色", "剩饭：投入绿色厨余桶。"),
+    "noodle": ("厨余垃圾", "绿色", "剩面：投入绿色厨余桶。"),
+    "cookie": ("厨余垃圾", "绿色", "剩余食品：投入绿色厨余桶。"),
+    "candy": ("其他垃圾", "灰色", "糖果及包装纸：投入灰色其他垃圾桶。"),
+    "fish": ("厨余垃圾", "绿色", "鱼骨内脏：投入绿色厨余桶。"),
+    "chicken": ("厨余垃圾", "绿色", "剩余食品：大骨难腐烂可投其他垃圾。"),
+    "beef": ("厨余垃圾", "绿色", "剩余食品：大骨难腐烂可投其他垃圾。"),
+}
 
 _BIN_COLORS = ("蓝色", "绿色", "红色", "灰色")
 
@@ -86,8 +151,9 @@ def waste_advice(label: object) -> dict:
     if name in _NON_WASTE:
         return {"label": name, "type": "非垃圾对象", "bin": "-", "advice": "",
                 "is_waste": False, "known": True}
-    if name in _COCO_WASTE:
-        kind, color, advice = _COCO_WASTE[name]
+    rule = _COCO_WASTE.get(name) or _EXTENDED_WASTE.get(name)
+    if rule:
+        kind, color, advice = rule
         return {"label": name, "type": kind, "bin": color, "advice": advice,
                 "is_waste": True, "known": True}
     return {"label": name, "type": "其他垃圾", "bin": "灰色",
