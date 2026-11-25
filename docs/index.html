@@ -3,159 +3,155 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>校园垃圾分类投放识别 · YOLOv8 入门项目</title>
+<title>校园垃圾分类投放识别 · YOLOv8 项目展示</title>
 <style>
   :root {
-    --ink: #1f2937;
-    --muted: #6b7280;
-    --accent: #2563eb;
-    --accent-dark: #1e40af;
-    --bg: #f8fafc;
-    --card: #ffffff;
-    --line: #e5e7eb;
-    --green: #16a34a;
-    --orange: #ea580c;
-    --gray: #6b7280;
-    --red: #dc2626;
+    --ink:#0f172a; --muted:#52607a; --accent:#4f46e5; --accent2:#2563eb;
+    --bg:#eef2f9; --card:#ffffff; --line:#dbe3f0;
+    --green:#16a34a; --orange:#ea580c; --red:#dc2626;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing:border-box; margin:0; padding:0; }
   body {
-    font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    line-height: 1.7;
+    font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    background:linear-gradient(160deg,#eef2ff 0%,#f8fafc 45%,#ecfeff 100%);
+    background-attachment:fixed; color:var(--ink); line-height:1.75;
   }
   .hero {
-    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-    color: #fff;
-    padding: 64px 24px 56px;
-    text-align: center;
+    background:linear-gradient(120deg,#4338ca 0%,#4f46e5 45%,#2563eb 100%);
+    color:#fff; padding:60px 24px 52px; text-align:center; position:relative; overflow:hidden;
   }
-  .hero h1 { font-size: 32px; margin-bottom: 12px; }
-  .hero p { opacity: .92; max-width: 720px; margin: 0 auto; font-size: 15px; }
-  .hero .badges { margin-top: 20px; }
+  .hero::after { content:"♻"; position:absolute; right:6%; top:0; font-size:220px; opacity:.08; line-height:1; }
+  .hero h1 { font-size:38px; margin-bottom:14px; font-weight:800; position:relative; z-index:1; }
+  .hero p { opacity:.94; max-width:760px; margin:0 auto; font-size:17px; position:relative; z-index:1; }
+  .hero .badges { margin-top:24px; position:relative; z-index:1; }
   .hero .badges span {
-    display: inline-block; background: rgba(255,255,255,.16);
-    border: 1px solid rgba(255,255,255,.35);
-    border-radius: 999px; padding: 4px 14px; margin: 4px; font-size: 13px;
+    display:inline-block; background:rgba(255,255,255,.16);
+    border:1px solid rgba(255,255,255,.35);
+    border-radius:999px; padding:6px 16px; margin:4px; font-size:13px;
   }
-  main { max-width: 960px; margin: 0 auto; padding: 40px 24px 64px; }
-  .cta { text-align: center; margin-top: 8px; }
+  main { max-width:1000px; margin:0 auto; padding:40px 24px 72px; }
+  .cta { text-align:center; margin:4px 0 8px; }
   .btn {
-    display: inline-block; background: var(--accent); color: #fff;
-    text-decoration: none; font-weight: 600; font-size: 16px;
-    padding: 14px 36px; border-radius: 10px; margin: 6px 8px;
-    box-shadow: 0 4px 14px rgba(37,99,235,.35);
-    transition: background .15s;
+    display:inline-block; background:var(--accent); color:#fff;
+    text-decoration:none; font-weight:700; font-size:17px;
+    padding:15px 40px; border-radius:11px; margin:6px 8px;
+    box-shadow:0 5px 16px rgba(79,70,229,.3); transition:.15s;
   }
-  .btn:hover { background: var(--accent-dark); }
-  .btn.ghost {
-    background: #fff; color: var(--accent);
-    border: 1.5px solid var(--accent); box-shadow: none;
+  .btn:hover { background:#4338ca; transform:translateY(-2px); }
+  .btn.ghost { background:#fff; color:var(--accent); border:2px solid var(--accent); box-shadow:none; }
+  .btn.ghost:hover { background:#eef2ff; }
+  h2 { font-size:24px; margin:48px 0 8px; }
+  h2 .sub { display:block; font-size:14px; color:var(--muted); font-weight:400; margin-top:2px; }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:18px; margin-top:18px; }
+  .demo-card {
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    overflow:hidden; box-shadow:0 6px 22px rgba(15,23,42,.07);
   }
-  .btn.ghost:hover { background: #eff6ff; }
-  h2 { font-size: 22px; margin: 44px 0 16px; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
-  .card {
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: 12px; padding: 18px 20px;
-  }
-  .card h3 { font-size: 16px; margin-bottom: 6px; }
-  .card p { font-size: 13.5px; color: var(--muted); }
-  .tag { display: inline-block; font-size: 12px; padding: 1px 10px; border-radius: 999px; color: #fff; margin-bottom: 8px; }
-  .steps { counter-reset: step; }
-  .step {
-    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
-    padding: 16px 20px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start;
-  }
-  .step::before {
-    counter-increment: step; content: counter(step);
-    flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%;
-    background: var(--accent); color: #fff; font-weight: 700;
-    display: flex; align-items: center; justify-content: center; font-size: 15px;
-  }
-  pre {
-    background: #0f172a; color: #e2e8f0; border-radius: 8px;
-    padding: 12px 16px; font-size: 13px; overflow-x: auto; margin-top: 8px;
-    font-family: Consolas, "Courier New", monospace;
-  }
-  .note { font-size: 13px; color: var(--muted); margin-top: 10px; }
-  footer { text-align: center; color: var(--muted); font-size: 13px; padding: 24px; border-top: 1px solid var(--line); }
-  footer a { color: var(--accent); text-decoration: none; }
+  .demo-card .imgbox { background:#0f172a; display:flex; align-items:center; justify-content:center; }
+  .demo-card img { width:100%; height:auto; display:block; }
+  .demo-card .body { padding:18px 20px 20px; }
+  .demo-card .body h3 { font-size:18px; margin-bottom:6px; }
+  .demo-card .body p { font-size:14px; color:var(--muted); }
+  .chip { display:inline-block; font-size:12px; font-weight:700; color:#fff; padding:3px 12px; border-radius:999px; margin-bottom:10px; }
+  .c-green{background:var(--green)} .c-blue{background:var(--accent2)}
+  .c-orange{background:var(--orange)} .c-red{background:var(--red)}
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px; margin-top:18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:20px 22px; box-shadow:0 4px 14px rgba(15,23,42,.05); }
+  .card h3 { font-size:16px; margin-bottom:6px; }
+  .card p { font-size:14px; color:var(--muted); }
+  .flow { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center; margin-top:20px; }
+  .flow .node { background:#fff; border:2px solid var(--accent); color:var(--ink); border-radius:12px; padding:14px 22px; font-weight:700; font-size:15px; }
+  .flow .arrow { color:var(--accent); font-size:22px; font-weight:700; }
+  .note { background:#fffbeb; border:1px solid #fde68a; border-left:5px solid #f59e0b; border-radius:10px; padding:16px 20px; font-size:14px; color:#92400e; margin-top:22px; }
+  pre { background:#0f172a; color:#e2e8f0; border-radius:10px; padding:16px 20px; font-size:13px; overflow-x:auto; margin-top:10px; font-family:Consolas,"Courier New",monospace; }
+  footer { text-align:center; color:var(--muted); font-size:13px; padding:28px 24px; border-top:1px solid var(--line); background:#fff; }
+  footer a { color:var(--accent); text-decoration:none; }
 </style>
 </head>
 <body>
 
 <div class="hero">
   <h1>校园垃圾分类投放识别</h1>
-  <p>基于 YOLOv8 的课程入门项目：上传照片 → 检测物品 → 中文标注 → 投放建议。
-     支持固定 80 类垃圾分类、YOLO-World 开放词汇全物体提取、密集小目标切片推理与自定义训练四种模式。</p>
+  <p>拍一张照片，自动框出物品，并给出中文垃圾分类投放建议。基于 YOLOv8 与 YOLO-World 双模型融合，检测与决策分层设计。</p>
   <div class="badges">
-    <span>YOLOv8n / YOLO-World</span><span>Flask 网页识别</span><span>128 项单元测试</span><span>Python 3.13</span>
+    <span>YOLOv8n / YOLO-World</span><span>4 种识别模式</span><span>147 项单元测试</span><span>全中文输出</span>
   </div>
 </div>
 
 <main>
   <div class="cta">
-    <a class="btn" href="demo.html">▶ 打开演示看板</a>
+    <a class="btn" href="demo.html">打开实验看板</a>
     <a class="btn ghost" href="https://github.com/Gubao-tian/yolo-starter">查看源码</a>
   </div>
 
-  <h2>四种识别模式</h2>
+  <h2>真实识别效果<span class="sub">以下均为项目实际运行输出的检测标注图，非示意图</span></h2>
+  <div class="grid2">
+    <div class="demo-card">
+      <div class="imgbox"><img src="assets/show_waste.png" alt="垃圾分类识别结果"></div>
+      <div class="body">
+        <span class="chip c-green">模式一 · 垃圾分类</span>
+        <h3>COCO + 开放词汇双模型融合</h3>
+        <p>一张图检出 10 个对象，覆盖电视、碗、瓶子、柜子、书本等；规则表给出中文投放建议，IoU 去重保证不重复计数。</p>
+      </div>
+    </div>
+    <div class="demo-card">
+      <div class="imgbox"><img src="assets/show_world.png" alt="全物体提取结果"></div>
+      <div class="body">
+        <span class="chip c-blue">模式二 · 全物体提取</span>
+        <h3>119 类开放词表</h3>
+        <p>卧室图检出 16 个物品、12 个类别：篮子×3、柜子×2、盆栽×2、床、瓶子、地毯等，适合复杂家居场景。</p>
+      </div>
+    </div>
+    <div class="demo-card">
+      <div class="imgbox"><img src="assets/show_dense.png" alt="密集书本识别结果"></div>
+      <div class="body">
+        <span class="chip c-orange">模式三 · 密集书本</span>
+        <h3>切片推理 + NMS 去重</h3>
+        <p>书架整图直接检测为 0 本；切成重叠小块分别检测再合并后，检出 87 本，解决密集小目标漏检。</p>
+      </div>
+    </div>
+    <div class="demo-card">
+      <div class="imgbox"><img src="assets/show_nuts.png" alt="坚果识别结果"></div>
+      <div class="body">
+        <span class="chip c-red">模式四 · 坚果识别</span>
+        <h3>人工标注 + 微调训练</h3>
+        <p>人工框出 4 颗坚果做真值标注，数据增强后迁移微调 40 轮，mAP50 达 0.802，饭盒图 4 颗全部检出。</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>技术路线<span class="sub">检测与决策分层，是项目设计的核心</span></h2>
+  <div class="flow">
+    <div class="node">上传照片</div><div class="arrow">→</div>
+    <div class="node">双模型检测</div><div class="arrow">→</div>
+    <div class="node">IoU 去重</div><div class="arrow">→</div>
+    <div class="node">规则表投放建议</div>
+  </div>
   <div class="cards">
     <div class="card">
-      <span class="tag" style="background:var(--green)">垃圾分类（默认）</span>
-      <h3>COCO 80 类 + 投放规则</h3>
-      <p>框出物品并映射到可回收 / 厨余 / 有害 / 其他四类垃圾桶，给出中文投放建议，速度快。</p>
+      <h3>① 检测归模型</h3>
+      <p>YOLOv8n 负责"是什么、在哪里"，COCO 预训练 80 类 + YOLO-World 119 类开放词表互补。</p>
     </div>
     <div class="card">
-      <span class="tag" style="background:var(--accent)">全物体提取</span>
-      <h3>YOLO-World 开放词汇</h3>
-      <p>119 类词表覆盖食物、餐具、电子、家居等，照片里的物品尽量都框出来，输出物品清单。</p>
+      <h3>② 决策归规则</h3>
+      <p>投哪个桶由可解释规则表决定，映射为可回收 / 厨余 / 有害 / 其他，改规则无需重训模型。</p>
     </div>
     <div class="card">
-      <span class="tag" style="background:var(--orange)">密集书本</span>
-      <h3>切片推理 + 小目标召回</h3>
-      <p>把图切成带重叠的小块分别检测再合并去重，专攻书架密集排列的小目标，阈值可调。</p>
+      <h3>③ 训练破上限</h3>
+      <p>词表与阈值有天花板。人工标注 4 颗坚果微调后 mAP50=0.802；书本伪标签自训练失败作反例。</p>
     </div>
     <div class="card">
-      <span class="tag" style="background:var(--red)">坚果识别</span>
-      <h3>人工标注 + 微调训练</h3>
-      <p>自建标注数据集迁移微调 YOLOv8n，验证集 mAP50=0.802，专治开放词汇认不出的小目标。</p>
+      <h3>④ 工程规范</h3>
+      <p>测试驱动开发，147 项单元测试全通过；Flask 网页四模式切换，全链路中文标签。</p>
     </div>
   </div>
 
-  <h2>本地运行（三步）</h2>
-  <div class="steps">
-    <div class="step">
-      <div>
-        <strong>克隆仓库并安装依赖</strong>
-        <pre>git clone https://github.com/Gubao-tian/yolo-starter.git
+  <h2>本地运行<span class="sub">在线页面为静态展示，实时识别需在本机运行</span></h2>
+  <pre>git clone https://github.com/Gubao-tian/yolo-starter.git
 cd yolo-starter
-python -m pip install -r requirements.txt</pre>
-      </div>
-    </div>
-    <div class="step">
-      <div>
-        <strong>启动识别网页</strong>（Windows 可直接双击 <code>webapp\启动识别.bat</code>）
-        <pre>.venv\Scripts\python.exe webapp\app.py    # 或 python webapp/app.py</pre>
-      </div>
-    </div>
-    <div class="step">
-      <div>
-        <strong>浏览器打开 http://127.0.0.1:5000</strong>
-        <p class="note">上传照片 → 选模式 → 点「开始识别」。首次使用全物体模式会自动下载 YOLO-World 权重；坚果模式权重已包含在仓库中。</p>
-      </div>
-    </div>
-  </div>
-
-  <h2>项目自检与测试</h2>
-  <pre>python scripts/check.py                       # 环境自检
-python -m unittest discover -s tests -v      # 128 项单元测试
-python scripts/run_all.py --mode demo --open # 生成演示看板</pre>
-
-  <p class="note">本页面为静态展示。识别服务需要 Python 后端，请在本地按上述步骤运行；
-     「演示看板」中的指标为流水线内置示例数据，用于展示流程与版式。</p>
+python -m pip install -r requirements.txt
+python webapp/app.py        # Windows 可双击 webapp\启动识别.bat</pre>
+  <p class="note">浏览器打开 <strong>http://127.0.0.1:5000</strong>，上传照片、选择模式即可识别。首次使用全物体模式会自动加载 YOLO-World 权重；坚果模式权重已包含在仓库中。本页识别图为项目实测输出，指标口径见"实验看板"。</p>
 </main>
 
 <footer>
